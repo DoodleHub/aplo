@@ -158,3 +158,10 @@ export const MonitorIcon = (p: IconProps) => (
     <path d="M9 20h6M12 16v4" />
   </Icon>
 );
+
+export const CloudOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8.5 7.4A5.5 5.5 0 0 1 17 10a4 4 0 0 1 2.9 6.6M15.5 19H7a4 4 0 0 1-1.2-7.8" />
+    <path d="M3 3l18 18" />
+  </Icon>
+);

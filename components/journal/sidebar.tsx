@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { signOut } from "@/app/(auth)/actions";
+import { clearDeviceCopy } from "@/lib/local-db";
 import { Logo } from "@/components/brand";
 import { Dot } from "@/components/ui/chip";
 import { Menu } from "@/components/ui/menu";
@@ -21,7 +22,7 @@ export function Sidebar({
   onCreateCategory: () => void;
 }) {
   const pathname = usePathname();
-  const { categories, countByCategory, entries, user } = useJournal();
+  const { categories, countByCategory, entries, user, pendingWrites } = useJournal();
   const favorites = entries.filter((e) => e.is_favorite).length;
 
   return (
@@ -122,7 +123,18 @@ export function Sidebar({
           {
             label: "Sign out",
             icon: <LogoutIcon size={17} />,
-            onSelect: () => signOut(),
+            onSelect: async () => {
+              if (
+                pendingWrites > 0 &&
+                !window.confirm(
+                  "Some changes haven’t synced yet. They’ll stay on this device and sync next time you sign in here. Sign out anyway?",
+                )
+              ) {
+                return;
+              }
+              await clearDeviceCopy(user.id);
+              await signOut();
+            },
           },
         ]}
         trigger={(props) => (

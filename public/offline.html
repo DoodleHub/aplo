@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1d1a" media="(prefers-color-scheme: dark)" />
+    <title>Offline · aplo</title>
+    <style>
+      :root {
+        --canvas: #faf9f5;
+        --ink: #363e37;
+        --muted: #85867b;
+        --accent: #4e684f;
+        --on-accent: #ffffff;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --canvas: #1a1d1a;
+          --ink: #e6e8df;
+          --muted: #a0a397;
+          --accent: #a7bf98;
+          --on-accent: #172017;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+      }
+      img { width: 96px; height: 96px; border-radius: 24px; }
+      h1 { margin: 20px 0 8px; font-size: 1.5rem; letter-spacing: -0.02em; }
+      p { margin: 0 auto 24px; max-width: 32ch; color: var(--muted); line-height: 1.5; }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 22px;
+        font: inherit;
+        font-weight: 600;
+        background: var(--accent);
+        color: var(--on-accent);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="" />
+      <h1>You're offline</h1>
+      <p>Your journal will be right here once you're back online. Take a breath in the meantime.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+    <script>
+      addEventListener("online", () => location.reload());
+    </script>
+  </body>
+</html>

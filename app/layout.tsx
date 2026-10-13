@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Instrument_Sans } from "next/font/google";
+import { ServiceWorker } from "@/components/pwa";
 import { ThemeSync } from "@/components/theme";
 import { ToastProvider } from "@/components/ui/toast";
 import { themeScript } from "@/lib/theme";
@@ -21,6 +22,12 @@ export const metadata: Metadata = {
     template: "%s · aplo",
   },
   description: "A gentle journal for big feelings and small moments.",
+  applicationName: "aplo",
+  appleWebApp: {
+    capable: true,
+    title: "aplo",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -43,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full">
         <ThemeSync />
+        <ServiceWorker />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

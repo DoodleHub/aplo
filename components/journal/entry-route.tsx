@@ -1,22 +1,20 @@
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
+import { useState, useSyncExternalStore } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Editor } from "./editor";
 import { EmptyState } from "./entry-grid";
 import { useJournal } from "./store";
 
-/** /entry/[id] — edit an existing thought, or start a fresh one when ?new=1. */
+/** /entry/[id] — edit an existing thought. */
 export function EntryRoute() {
   const { id } = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
-  const { entries, categoryById } = useJournal();
+  const { entries } = useJournal();
   const entry = entries.find((e) => e.id === id);
-  const isNew = searchParams.get("new") === "1";
 
-  if (!entry && !isNew) {
+  if (!entry) {
     return (
       <EmptyState
         emoji="🍂"
@@ -28,25 +26,38 @@ export function EntryRoute() {
     );
   }
 
+  return <Editor key={id} id={id} entry={entry} />;
+}
+
+const noopSubscribe = () => () => {};
+
+/**
+ * /new — a fresh thought. The editor opens right here rather than redirecting to a new
+ * /entry/<id> URL, which couldn't have been cached for offline use.
+ */
+export function NewEntry() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { entries, categoryById } = useJournal();
+  // Ids are minted on the client only; the server renders the skeleton.
+  const [freshId] = useState(() => (typeof window === "undefined" ? "" : crypto.randomUUID()));
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  if (!mounted) return <EditorSkeleton />;
+
+  // Once saved, the editor moves the URL to /entry/<id>; coming back to it (e.g. with the
+  // back button) should reopen that entry, not start another.
+  const id = pathname.match(/^\/entry\/([^/]+)$/)?.[1] ?? freshId;
   const requested = searchParams.get("category");
   const defaultCategoryId = requested && categoryById.has(requested) ? requested : null;
 
-  return <Editor key={id} id={id} entry={entry} defaultCategoryId={defaultCategoryId} />;
-}
-
-/** /new — mint an id for a fresh thought and hand off to the editor. */
-export function NewEntryRedirect() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const params = new URLSearchParams({ new: "1" });
-    const category = searchParams.get("category");
-    if (category) params.set("category", category);
-    router.replace(`/entry/${crypto.randomUUID()}?${params}`);
-  }, [router, searchParams]);
-
-  return <EditorSkeleton />;
+  return (
+    <Editor
+      key={id}
+      id={id}
+      entry={entries.find((e) => e.id === id)}
+      defaultCategoryId={defaultCategoryId}
+    />
+  );
 }
 
 export function EditorSkeleton() {

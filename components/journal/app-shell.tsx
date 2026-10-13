@@ -8,6 +8,7 @@ import { CloseIcon } from "@/components/icons";
 import { IconButton } from "@/components/ui/button";
 import { DeleteCategoryDialog } from "./category-actions";
 import { CategoryDialog } from "./category-dialog";
+import { OfflineBanner } from "./offline-banner";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
@@ -92,6 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="mx-auto w-full max-w-[72rem] px-4 pb-16 sm:px-8 lg:px-12">
           <Topbar onOpenMenu={() => setDrawerOpen(true)} />
+          <OfflineBanner />
           <main className="pt-8 sm:pt-10">{children}</main>
         </div>
       </div>

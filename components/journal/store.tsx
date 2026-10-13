@@ -12,6 +12,8 @@ import {
   type ReactNode,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { applyOps, loadOutbox, loadSnapshot, saveSnapshot } from "@/lib/local-db";
+import { createSyncQueue } from "@/lib/sync";
 import { useToast } from "@/components/ui/toast";
 import type { Category, CategoryInput, Entry, EntryPatch } from "@/lib/types";
 
@@ -24,6 +26,8 @@ type JournalApi = {
   now: string;
   categories: Category[];
   entries: Entry[];
+  /** Writes not yet confirmed by the server, e.g. made while offline. */
+  pendingWrites: number;
   categoryById: Map<string, Category>;
   countByCategory: Map<string, number>;
   createCategory: (input: CategoryInput) => Category;
@@ -69,6 +73,45 @@ export function JournalProvider({
     () => initialTimeZone,
   );
   const pendingCreates = useRef(new Map<string, Promise<boolean>>());
+  const [sync] = useState(() => createSyncQueue(supabase, user.id));
+  const pendingWrites = useSyncExternalStore(sync.subscribe, sync.pending, () => 0);
+
+  // Server time of the newest server data in `categories`/`entries`.
+  const basedOn = useRef(now);
+  const [restored, setRestored] = useState(false);
+
+  // Bring back what this device knows that the server-rendered page doesn't: writes still in
+  // the outbox, or — when this page was served from the offline cache — the newer journal copy.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([loadSnapshot(user.id), loadOutbox(user.id)]).then(([snapshot, outbox]) => {
+      if (cancelled) return;
+      if (snapshot && snapshot.basedOn >= now) {
+        basedOn.current = snapshot.basedOn;
+        setCategories(snapshot.categories);
+        setEntries(snapshot.entries);
+      } else if (outbox.length) {
+        const local = applyOps({ categories: initialCategories, entries: initialEntries }, outbox);
+        setCategories(local.categories);
+        setEntries(local.entries.sort(byNewest));
+      }
+      sync.resume(outbox);
+      setRestored(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id, now, initialCategories, initialEntries, sync]);
+
+  // Keep a copy of the journal on this device so it can be read offline.
+  useEffect(() => {
+    if (!restored) return;
+    const timer = setTimeout(
+      () => saveSnapshot({ userId: user.id, basedOn: basedOn.current, categories, entries }),
+      400,
+    );
+    return () => clearTimeout(timer);
+  }, [restored, user.id, categories, entries]);
 
   // Dates render in the reader's timezone; remember it so the server can match next time.
   useEffect(() => {
@@ -95,6 +138,11 @@ export function JournalProvider({
     [toast],
   );
 
+  useEffect(
+    () => sync.onLateError((_, error) => fail("We couldn’t sync a change you made offline.", error)),
+    [sync, fail],
+  );
+
   const createCategory = useCallback<JournalApi["createCategory"]>(
     (input) => {
       const category: Category = {
@@ -106,9 +154,8 @@ export function JournalProvider({
         created_at: new Date().toISOString(),
       };
       setCategories((all) => [...all, category]);
-      supabase
-        .from("categories")
-        .insert(category)
+      sync
+        .run({ table: "categories", kind: "upsert", row: category })
         .then(({ error }) => {
           if (!error) return;
           setCategories((all) => all.filter((c) => c.id !== category.id));
@@ -116,7 +163,7 @@ export function JournalProvider({
         });
       return category;
     },
-    [categories, supabase, fail],
+    [categories, sync, fail],
   );
 
   const updateCategory = useCallback<JournalApi["updateCategory"]>(
@@ -125,17 +172,15 @@ export function JournalProvider({
       if (!previous) return;
       const patch = input.name ? { ...input, name: input.name.trim() } : input;
       setCategories((all) => all.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-      supabase
-        .from("categories")
-        .update(patch)
-        .eq("id", id)
+      sync
+        .run({ table: "categories", kind: "update", key: id, patch })
         .then(({ error }) => {
           if (!error) return;
           setCategories((all) => all.map((c) => (c.id === id ? previous : c)));
           fail("We couldn’t update that corner.", error);
         });
     },
-    [categories, supabase, fail],
+    [categories, sync, fail],
   );
 
   const deleteCategory = useCallback<JournalApi["deleteCategory"]>(
@@ -144,10 +189,8 @@ export function JournalProvider({
       const previousEntries = entries;
       setCategories((all) => all.filter((c) => c.id !== id));
       setEntries((all) => all.map((e) => (e.category_id === id ? { ...e, category_id: null } : e)));
-      supabase
-        .from("categories")
-        .delete()
-        .eq("id", id)
+      sync
+        .run({ table: "categories", kind: "delete", key: id })
         .then(({ error }) => {
           if (error) {
             setCategories(previousCategories);
@@ -158,33 +201,25 @@ export function JournalProvider({
           }
         });
     },
-    [categories, entries, supabase, fail, toast],
+    [categories, entries, sync, fail, toast],
   );
 
   const createEntry = useCallback<JournalApi["createEntry"]>(
     (entry) => {
       setEntries((all) => [entry, ...all.filter((e) => e.id !== entry.id)].sort(byNewest));
-      const request = Promise.resolve(
-        supabase.from("entries").insert({
-          id: entry.id,
-          category_id: entry.category_id,
-          title: entry.title,
-          content: entry.content,
-          mood: entry.mood,
-          is_favorite: entry.is_favorite,
-          created_at: entry.created_at,
-        }),
-      ).then(({ error }) => {
-        pendingCreates.current.delete(entry.id);
-        if (!error) return true;
-        setEntries((all) => all.filter((e) => e.id !== entry.id));
-        fail("We couldn’t save that thought. Please try again.", error);
-        return false;
-      });
+      const request = sync
+        .run({ table: "entries", kind: "upsert", row: entry })
+        .then(({ error }) => {
+          pendingCreates.current.delete(entry.id);
+          if (!error) return true;
+          setEntries((all) => all.filter((e) => e.id !== entry.id));
+          fail("We couldn’t save that thought. Please try again.", error);
+          return false;
+        });
       pendingCreates.current.set(entry.id, request);
       return request;
     },
-    [supabase, fail],
+    [sync, fail],
   );
 
   const updateEntry = useCallback<JournalApi["updateEntry"]>(
@@ -194,14 +229,14 @@ export function JournalProvider({
       );
       const pending = pendingCreates.current.get(id);
       if (pending && !(await pending)) return false;
-      const { error } = await supabase.from("entries").update(patch).eq("id", id);
+      const { error } = await sync.run({ table: "entries", kind: "update", key: id, patch });
       if (error) {
         fail("We couldn’t save your latest changes.", error);
         return false;
       }
       return true;
     },
-    [supabase, fail],
+    [sync, fail],
   );
 
   const toggleFavorite = useCallback<JournalApi["toggleFavorite"]>(
@@ -210,17 +245,15 @@ export function JournalProvider({
       if (!entry) return;
       const next = !entry.is_favorite;
       setEntries((all) => all.map((e) => (e.id === id ? { ...e, is_favorite: next } : e)));
-      supabase
-        .from("entries")
-        .update({ is_favorite: next })
-        .eq("id", id)
+      sync
+        .run({ table: "entries", kind: "update", key: id, patch: { is_favorite: next } })
         .then(({ error }) => {
           if (!error) return;
           setEntries((all) => all.map((e) => (e.id === id ? { ...e, is_favorite: !next } : e)));
           fail("We couldn’t update your favorites.", error);
         });
     },
-    [entries, supabase, fail],
+    [entries, sync, fail],
   );
 
   const deleteEntry = useCallback<JournalApi["deleteEntry"]>(
@@ -228,10 +261,8 @@ export function JournalProvider({
       const entry = entries.find((e) => e.id === id);
       if (!entry) return;
       setEntries((all) => all.filter((e) => e.id !== id));
-      supabase
-        .from("entries")
-        .delete()
-        .eq("id", id)
+      sync
+        .run({ table: "entries", kind: "delete", key: id })
         .then(({ error }) => {
           if (error) {
             setEntries((all) => [entry, ...all].sort(byNewest));
@@ -242,9 +273,8 @@ export function JournalProvider({
             label: "Undo",
             onClick: () => {
               setEntries((all) => [entry, ...all].sort(byNewest));
-              supabase
-                .from("entries")
-                .insert(entry)
+              sync
+                .run({ table: "entries", kind: "upsert", row: entry })
                 .then(({ error: restoreError }) => {
                   if (!restoreError) return;
                   setEntries((all) => all.filter((e) => e.id !== id));
@@ -254,7 +284,7 @@ export function JournalProvider({
           });
         });
     },
-    [entries, supabase, fail, toast],
+    [entries, sync, fail, toast],
   );
 
   const api = useMemo<JournalApi>(
@@ -262,6 +292,7 @@ export function JournalProvider({
       user,
       timeZone,
       now,
+      pendingWrites,
       categories,
       entries,
       categoryById,
@@ -278,6 +309,7 @@ export function JournalProvider({
       user,
       timeZone,
       now,
+      pendingWrites,
       categories,
       entries,
       categoryById,
