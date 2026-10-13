@@ -104,7 +104,7 @@ export function Search({ className }: { className?: string }) {
             setOpen(false);
           }
         }}
-        className="peer h-12 w-full rounded-2xl border border-line bg-surface pr-14 pl-10 text-[0.95rem] text-ink shadow-soft outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-ink-soft/80 hover:border-line-strong focus:border-sage-400 focus:ring-4 focus:ring-sage-200/70 [&::-webkit-search-cancel-button]:hidden"
+        className="peer h-12 w-full rounded-2xl border border-line bg-surface pr-14 pl-10 text-base text-ink lg:text-[0.95rem] shadow-soft outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-ink-soft/80 hover:border-line-strong focus:border-sage-400 focus:ring-4 focus:ring-sage-200/70 [&::-webkit-search-cancel-button]:hidden"
       />
       <kbd className="pointer-events-none absolute top-1/2 right-3.5 hidden -translate-y-1/2 rounded-md border border-line bg-canvas px-1.5 py-0.5 font-sans text-[0.7rem] text-subtle transition-opacity peer-focus:opacity-0 md:block">
         ⌘K

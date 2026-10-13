@@ -9,6 +9,7 @@ import { Logo } from "@/components/brand";
 import { Dot } from "@/components/ui/chip";
 import { Menu } from "@/components/ui/menu";
 import { FlowerIcon, HeartIcon, JournalIcon, LogoutIcon, PlusIcon, SmileIcon } from "@/components/icons";
+import { CategoryMenu } from "./category-actions";
 import { useJournal } from "./store";
 
 export function Sidebar({
@@ -59,14 +60,14 @@ export function Sidebar({
             const href = `/c/${category.id}`;
             const active = pathname === href;
             return (
-              <li key={category.id} className="animate-fade-in">
+              <li key={category.id} className="group/row relative animate-fade-in">
                 <Link
                   href={href}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "group flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors duration-200",
-                    active ? "bg-sage-100 text-ink" : "text-ink hover:bg-sage-100/70",
+                    "group flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors duration-200 pointer-coarse:pr-11",
+                    active ? "bg-sage-100 text-ink" : "text-ink hover:bg-sage-100/70 group-has-[[aria-expanded=true]]/row:bg-sage-100/70",
                   )}
                 >
                   <Dot
@@ -74,8 +75,16 @@ export function Sidebar({
                     className="transition-transform duration-300 ease-spring group-hover:scale-125"
                   />
                   <span className="flex-1 truncate">{category.name}</span>
-                  <span className="text-xs tabular-nums text-subtle">{countByCategory.get(category.id) ?? 0}</span>
+                  <span className="text-xs tabular-nums text-subtle transition-opacity duration-150 pointer-fine:group-hover/row:opacity-0 pointer-fine:group-focus-within/row:opacity-0 pointer-fine:group-has-[[aria-expanded=true]]/row:opacity-0">
+                    {countByCategory.get(category.id) ?? 0}
+                  </span>
                 </Link>
+                <CategoryMenu
+                  category={category}
+                  iconSize={17}
+                  className="absolute top-1/2 right-1 -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover/row:opacity-100 group-focus-within/row:opacity-100 has-[[aria-expanded=true]]:opacity-100 pointer-coarse:opacity-100"
+                  triggerClassName="h-8 w-8 hover:bg-sage-200/70"
+                />
               </li>
             );
           })}

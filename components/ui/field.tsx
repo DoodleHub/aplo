@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 import { EyeIcon } from "@/components/icons";
 
 export const inputStyles =
-  "h-12 w-full rounded-xl border border-line bg-surface px-4 text-[0.95rem] text-ink shadow-soft outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-faint hover:border-line-strong focus:border-sage-400 focus:ring-4 focus:ring-sage-200/70 aria-invalid:border-danger/60 aria-invalid:focus:ring-danger-soft";
+  "h-12 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink shadow-soft lg:text-[0.95rem] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-faint hover:border-line-strong focus:border-sage-400 focus:ring-4 focus:ring-sage-200/70 aria-invalid:border-danger/60 aria-invalid:focus:ring-danger-soft";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cn(inputStyles, className)} {...props} />;

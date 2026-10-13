@@ -1,14 +1,11 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { palette } from "@/lib/palette";
-import { Button, ButtonLink, IconButton } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
-import { Menu } from "@/components/ui/menu";
-import { MoreIcon, PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
-import { useShell } from "./app-shell";
+import { ButtonLink } from "@/components/ui/button";
+import { PlusIcon } from "@/components/icons";
+import { CategoryMenu } from "./category-actions";
 import { EmptyState, EntryGrid } from "./entry-grid";
 import { Footer } from "./home-view";
 import { useJournal } from "./store";
@@ -19,10 +16,7 @@ export function CategoryRoute() {
 }
 
 export function CategoryView({ id }: { id: string }) {
-  const router = useRouter();
-  const { categoryById, entries, deleteCategory } = useJournal();
-  const { openCategoryDialog } = useShell();
-  const [confirming, setConfirming] = useState(false);
+  const { categoryById, entries } = useJournal();
   const category = categoryById.get(id);
 
   if (!category) {
@@ -66,26 +60,7 @@ export function CategoryView({ id }: { id: string }) {
           <ButtonLink href={`/new?category=${id}`} icon={<PlusIcon size={18} strokeWidth={2.2} />}>
             New entry
           </ButtonLink>
-          <Menu
-            items={[
-              {
-                label: "Edit corner",
-                icon: <PencilIcon size={17} />,
-                onSelect: () => openCategoryDialog(category),
-              },
-              {
-                label: "Delete corner",
-                icon: <TrashIcon size={17} />,
-                tone: "danger",
-                onSelect: () => setConfirming(true),
-              },
-            ]}
-            trigger={(props) => (
-              <IconButton label="Corner options" className="h-11 w-11 bg-white/50 text-ink hover:bg-white/80" {...props}>
-                <MoreIcon size={20} />
-              </IconButton>
-            )}
-          />
+          <CategoryMenu category={category} triggerClassName="h-11 w-11 bg-white/50 text-ink hover:bg-white/80" />
         </div>
       </header>
 
@@ -111,32 +86,6 @@ export function CategoryView({ id }: { id: string }) {
 
       <Footer />
 
-      <Dialog
-        open={confirming}
-        onClose={() => setConfirming(false)}
-        title={`Delete “${category.name}”?`}
-        description={
-          inCategory.length > 0
-            ? `Your ${inCategory.length} ${inCategory.length === 1 ? "thought" : "thoughts"} will stay in your journal, just without a corner.`
-            : "This corner is empty, so nothing else will change."
-        }
-      >
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setConfirming(false)}>
-            Keep it
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              setConfirming(false);
-              router.push("/");
-              deleteCategory(id);
-            }}
-          >
-            Delete corner
-          </Button>
-        </div>
-      </Dialog>
     </div>
   );
 }

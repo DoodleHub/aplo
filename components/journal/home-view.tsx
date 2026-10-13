@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { FlowerIcon, HeartIcon, PlusIcon, SunIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
+import { CategoryMenu } from "./category-actions";
 import { CategoryCard } from "./category-card";
 import { EmptyState, EntryGrid } from "./entry-grid";
 import { HeroPrompt } from "./hero-prompt";
@@ -57,6 +58,9 @@ export function HomeView() {
                 category={category}
                 count={countByCategory.get(category.id) ?? 0}
                 style={{ animationDelay: `${100 + i * 50}ms` }}
+                actions={
+                  <CategoryMenu category={category} iconSize={18} triggerClassName="text-ink-soft hover:bg-white/60" />
+                }
               />
             ))}
           </div>

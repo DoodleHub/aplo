@@ -6,12 +6,14 @@ import { cn } from "@/lib/cn";
 import type { Category } from "@/lib/types";
 import { CloseIcon } from "@/components/icons";
 import { IconButton } from "@/components/ui/button";
+import { DeleteCategoryDialog } from "./category-actions";
 import { CategoryDialog } from "./category-dialog";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
 type ShellApi = {
   openCategoryDialog: (category?: Category) => void;
+  confirmDeleteCategory: (category: Category) => void;
 };
 
 const ShellContext = createContext<ShellApi | null>(null);
@@ -20,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dialog, setDialog] = useState<{ open: boolean; category?: Category }>({ open: false });
+  const [deleting, setDeleting] = useState<Category>();
 
   // Close the mobile drawer whenever the route changes.
   const [lastPath, setLastPath] = useState(pathname);
@@ -40,7 +43,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [drawerOpen]);
 
   const api = useMemo<ShellApi>(
-    () => ({ openCategoryDialog: (category) => setDialog({ open: true, category }) }),
+    () => ({
+      openCategoryDialog: (category) => setDialog({ open: true, category }),
+      confirmDeleteCategory: setDeleting,
+    }),
     [],
   );
 
@@ -95,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         category={dialog.category}
         onClose={() => setDialog((d) => ({ ...d, open: false }))}
       />
+      <DeleteCategoryDialog category={deleting} onClose={() => setDeleting(undefined)} />
     </ShellContext>
   );
 }

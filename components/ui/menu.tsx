@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
 type Item = {
@@ -10,6 +11,13 @@ type Item = {
   tone?: "danger";
 };
 
+const GAP = 8;
+const PANEL_ROOM = 160;
+
+/**
+ * Popover menu. The panel renders in a portal with fixed positioning so it is never
+ * clipped by scrolling containers (e.g. the sidebar list) or shifted by hover transforms.
+ */
 export function Menu({
   trigger,
   items,
@@ -26,57 +34,77 @@ export function Menu({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<CSSProperties>();
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    const placeBelow =
+      side === "bottom" ? rect.bottom + PANEL_ROOM < window.innerHeight : rect.top < PANEL_ROOM;
+    setPosition({
+      ...(placeBelow
+        ? { top: rect.bottom + GAP }
+        : { bottom: window.innerHeight - rect.top + GAP }),
+      ...(align === "end" ? { right: window.innerWidth - rect.right } : { left: rect.left }),
+    });
+  }, [open, side, align]);
 
   useEffect(() => {
     if (!open) return;
+    const close = () => setOpen(false);
     const onPointer = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!anchorRef.current?.contains(target) && !panelRef.current?.contains(target)) close();
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
     return () => {
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
     };
   }, [open]);
 
   return (
-    <div ref={ref} className={cn("relative", className)}>
+    <div ref={anchorRef} className={className}>
       {trigger({ onClick: () => setOpen((o) => !o), "aria-expanded": open, "aria-haspopup": "menu" })}
-      {open && (
-        <div
-          role="menu"
-          className={cn(
-            "absolute z-40 min-w-52 animate-pop-in rounded-2xl border border-line bg-surface p-1.5 shadow-pop",
-            align === "end" ? "right-0" : "left-0",
-            side === "bottom" ? "top-full mt-2" : "bottom-full mb-2",
-          )}
-        >
-          {header && <div className="border-b border-line px-3 pt-2 pb-2.5 mb-1">{header}</div>}
-          {items.map((item) => (
-            <button
-              key={item.label}
-              role="menuitem"
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                item.onSelect();
-              }}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
-                item.tone === "danger"
-                  ? "text-danger hover:bg-danger-soft"
-                  : "text-ink hover:bg-sage-50",
-              )}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {open &&
+        position &&
+        createPortal(
+          <div
+            ref={panelRef}
+            role="menu"
+            style={position}
+            className="fixed z-60 min-w-52 animate-pop-in rounded-2xl border border-line bg-surface p-1.5 shadow-pop"
+          >
+            {header && <div className="mb-1 border-b border-line px-3 pt-2 pb-2.5">{header}</div>}
+            {items.map((item) => (
+              <button
+                key={item.label}
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  item.onSelect();
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
+                  item.tone === "danger" ? "text-danger hover:bg-danger-soft" : "text-ink hover:bg-sage-50",
+                )}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
