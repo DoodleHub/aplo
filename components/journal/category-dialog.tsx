@@ -112,7 +112,7 @@ function CategoryForm({
               aria-label={`Use ${option}`}
               aria-pressed={emoji === option}
               className={cn(
-                "flex aspect-square items-center justify-center rounded-xl text-lg transition-all duration-200 ease-soft",
+                "flex aspect-square items-center justify-center rounded-xl text-lg transition-[transform,background-color,box-shadow] duration-200 ease-soft will-change-transform",
                 emoji === option
                   ? "scale-105 bg-sage-200 ring-2 ring-sage-400"
                   : "hover:scale-110 hover:bg-sage-50",
@@ -136,7 +136,7 @@ function CategoryForm({
               aria-pressed={color === option}
               title={palette[option].label}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full border transition-transform duration-200 ease-spring hover:scale-110",
+                "flex h-9 w-9 items-center justify-center rounded-full border transition-transform duration-200 ease-spring will-change-transform hover:scale-110",
                 palette[option].card,
                 color === option && "ring-2 ring-offset-2 ring-offset-surface " + palette[option].ring,
               )}
