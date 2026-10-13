@@ -145,3 +145,16 @@ export const ChevronDownIcon = (p: IconProps) => (
     <path d="m6 9 6 6 6-6" />
   </Icon>
 );
+
+export const MoonIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.3 6.3 0 0 0 10.1 10.1Z" />
+  </Icon>
+);
+
+export const MonitorIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3.5" y="4.5" width="17" height="11.5" rx="2" />
+    <path d="M9 20h6M12 16v4" />
+  </Icon>
+);

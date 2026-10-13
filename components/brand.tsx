@@ -64,7 +64,7 @@ export function CloudWriter({ className }: { className?: string }) {
         {/* cloud body */}
         <path
           d="M118 136c-20 0-34-13-34-30 0-15 11-27 26-29 2-21 19-36 40-36 15 0 28 7 35 19 4-2 8-3 13-3 19 0 33 14 33 32 14 3 24 14 24 27 0 16-13 27-30 27h-26"
-          fill="#fffdf6"
+          fill="var(--color-cloud)"
           stroke={ink}
           strokeWidth="3"
         />

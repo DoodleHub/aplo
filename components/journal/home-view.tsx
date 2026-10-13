@@ -59,7 +59,7 @@ export function HomeView() {
                 count={countByCategory.get(category.id) ?? 0}
                 style={{ animationDelay: `${100 + i * 50}ms` }}
                 actions={
-                  <CategoryMenu category={category} iconSize={18} triggerClassName="text-ink-soft hover:bg-white/60" />
+                  <CategoryMenu category={category} iconSize={18} triggerClassName="text-ink-soft hover:bg-surface/60" />
                 }
               />
             ))}

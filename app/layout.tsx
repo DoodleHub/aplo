@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Instrument_Sans } from "next/font/google";
+import { ThemeSync } from "@/components/theme";
 import { ToastProvider } from "@/components/ui/toast";
+import { themeScript } from "@/lib/theme";
 import "./globals.css";
 
 const body = DM_Sans({
@@ -22,13 +24,25 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf9f5",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf9f5" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1d1a" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${body.variable} ${heading.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-theme="light"
+      className={`${body.variable} ${heading.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full">
+        <ThemeSync />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

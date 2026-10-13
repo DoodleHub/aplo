@@ -8,6 +8,7 @@ import { signOut } from "@/app/(auth)/actions";
 import { Logo } from "@/components/brand";
 import { Dot } from "@/components/ui/chip";
 import { Menu } from "@/components/ui/menu";
+import { ThemeSwitch } from "@/components/theme";
 import { FlowerIcon, HeartIcon, JournalIcon, LogoutIcon, PlusIcon, SmileIcon } from "@/components/icons";
 import { CategoryMenu } from "./category-actions";
 import { useJournal } from "./store";
@@ -114,6 +115,7 @@ export function Sidebar({
           <>
             <p className="text-xs text-subtle">Signed in as</p>
             <p className="truncate text-sm font-medium text-ink">{user.email}</p>
+            <ThemeSwitch className="mt-3" />
           </>
         }
         items={[
@@ -129,7 +131,7 @@ export function Sidebar({
             {...props}
             className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-colors hover:bg-sage-100/70"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e2cab1] text-ink">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-avatar text-ink">
               <SmileIcon size={20} />
             </span>
             <span className="min-w-0">

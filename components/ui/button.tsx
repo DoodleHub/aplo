@@ -10,11 +10,11 @@ const base =
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-sage-600 text-white shadow-button hover:bg-sage-700 active:shadow-[inset_0_-1px_0_rgb(0_0_0/0.18)]",
+    "bg-sage-600 text-on-accent shadow-button hover:bg-sage-700 active:shadow-[inset_0_-1px_0_rgb(0_0_0/0.18)]",
   soft: "bg-sage-100 text-sage-600 hover:bg-sage-200",
   ghost: "text-ink-soft hover:bg-sage-100 hover:text-ink",
   outline: "border border-line bg-surface text-ink hover:border-line-strong hover:bg-sage-50",
-  danger: "bg-danger text-white shadow-[inset_0_-3px_0_rgb(0_0_0/0.16)] hover:brightness-95",
+  danger: "bg-danger text-on-accent shadow-[inset_0_-3px_0_rgb(0_0_0/0.16)] hover:brightness-95",
 };
 
 const sizes: Record<Size, string> = {

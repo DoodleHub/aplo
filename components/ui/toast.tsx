@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="pointer-events-auto flex animate-pop-in items-center gap-4 rounded-2xl bg-ink py-3 pr-3 pl-5 text-sm text-white shadow-pop"
+            className="pointer-events-auto flex animate-pop-in items-center gap-4 rounded-2xl bg-ink py-3 pr-3 pl-5 text-sm text-canvas shadow-pop"
           >
             <span>{toast.message}</span>
             {toast.action ? (
@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.action!.onClick();
                   dismiss(toast.id);
                 }}
-                className="rounded-lg px-2.5 py-1 font-semibold text-sage-300 transition-colors hover:bg-white/10"
+                className="rounded-lg px-2.5 py-1 font-semibold text-sage-300 transition-colors hover:bg-canvas/10"
               >
                 {toast.action.label}
               </button>

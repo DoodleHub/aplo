@@ -4,7 +4,7 @@ import { ArrowUpRightIcon } from "@/components/icons";
 
 export function HeroPrompt() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-[#e1e5d7] bg-wash px-6 py-8 sm:px-10 sm:py-10">
+    <section className="relative overflow-hidden rounded-3xl border border-wash-line bg-wash px-6 py-8 sm:px-10 sm:py-10">
       <div className="relative z-10 max-w-md">
         <p className="text-eyebrow font-semibold uppercase text-sage-500">A moment to yourself</p>
         <h2 className="mt-3 font-display text-[1.55rem] leading-tight font-semibold tracking-[-0.03em] text-ink sm:text-[1.75rem]">

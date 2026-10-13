@@ -60,7 +60,7 @@ export function CategoryView({ id }: { id: string }) {
           <ButtonLink href={`/new?category=${id}`} icon={<PlusIcon size={18} strokeWidth={2.2} />}>
             New entry
           </ButtonLink>
-          <CategoryMenu category={category} triggerClassName="h-11 w-11 bg-white/50 text-ink hover:bg-white/80" />
+          <CategoryMenu category={category} triggerClassName="h-11 w-11 bg-surface/50 text-ink hover:bg-surface/80" />
         </div>
       </header>
 

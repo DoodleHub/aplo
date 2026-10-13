@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ==========================================================================
    aplo design system — tokens
    Soft, warm, paper-like. Sage is the voice; category tints are the accents.
@@ -21,6 +23,9 @@
   --color-surface: #ffffff; /* cards, inputs */
   --color-wash: #eaede0; /* hero / prompt */
   --color-wash-strong: #e6e9db; /* quote card */
+  --color-wash-line: #e1e5d7; /* hero border */
+  --color-cloud: #fffdf6; /* illustration paper */
+  --color-avatar: #e2cab1;
 
   /* Lines */
   --color-line: #e9e8e0;
@@ -32,6 +37,7 @@
   --color-muted: #85867b; /* body copy */
   --color-subtle: #999b91; /* meta */
   --color-faint: #b3b4ad; /* placeholders, disabled */
+  --color-on-accent: #ffffff; /* text on sage-600 / danger fills */
 
   /* Brand — sage */
   --color-sage-50: #f3f5ee;
@@ -53,21 +59,27 @@
   --color-cat-sage: #e8ebe0;
   --color-cat-sage-chip: #e8ebe0;
   --color-cat-sage-dot: #909e7f;
+  --color-cat-sage-line: #dfe3d4;
   --color-cat-sand: #e8dfcd;
   --color-cat-sand-chip: #f2e8d6;
   --color-cat-sand-dot: #ceba7d;
+  --color-cat-sand-line: #e0d6c3;
   --color-cat-lilac: #ece5ed;
   --color-cat-lilac-chip: #ece5ed;
   --color-cat-lilac-dot: #b4a1b8;
+  --color-cat-lilac-line: #e4dce5;
   --color-cat-sky: #e3ebee;
   --color-cat-sky-chip: #e3ebee;
   --color-cat-sky-dot: #95adb9;
+  --color-cat-sky-line: #d9e3e7;
   --color-cat-rose: #f1e2de;
   --color-cat-rose-chip: #f4e7e3;
   --color-cat-rose-dot: #cf9a8e;
+  --color-cat-rose-line: #e9d6d1;
   --color-cat-stone: #e9e6e1;
   --color-cat-stone-chip: #eeebe6;
   --color-cat-stone-dot: #a9a196;
+  --color-cat-stone-line: #dfdbd4;
 
   /* Radii */
   --radius-sm: 0.5rem;
@@ -147,7 +159,70 @@
   }
 }
 
+/* Dark — a quiet evening version of the same paper. Set via data-theme on <html>. */
 @layer base {
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-canvas: #1a1d1a;
+    --color-sidebar: #151815;
+    --color-surface: #222622;
+    --color-wash: #232922;
+    --color-wash-strong: #283026;
+    --color-wash-line: #2f382d;
+    --color-cloud: #2a302a;
+    --color-avatar: #5a4a3b;
+
+    --color-line: #2c312c;
+    --color-line-strong: #3a403a;
+
+    --color-ink: #e6e8df;
+    --color-ink-soft: #c3c6bc;
+    --color-muted: #a0a397;
+    --color-subtle: #868a7f;
+    --color-faint: #5f635b;
+    --color-on-accent: #172017;
+
+    /* Sage flips: low steps are dark fills, high steps are light accents. */
+    --color-sage-50: #20251f;
+    --color-sage-100: #263026;
+    --color-sage-200: #2e3b2e;
+    --color-sage-300: #3d4d3c;
+    --color-sage-400: #8a9f78;
+    --color-sage-500: #93a783;
+    --color-sage-600: #a7bf98; /* primary */
+    --color-sage-700: #bcd1ad;
+    --color-sage-800: #d2e0c7;
+
+    --color-heart: #cfa69b;
+    --color-danger: #e08b7d;
+    --color-danger-soft: #3a2521;
+
+    --color-cat-sage: #232922;
+    --color-cat-sage-chip: #2b3329;
+    --color-cat-sage-line: #303a2e;
+    --color-cat-sand: #2b2820;
+    --color-cat-sand-chip: #383226;
+    --color-cat-sand-line: #3a3428;
+    --color-cat-lilac: #29242b;
+    --color-cat-lilac-chip: #342d36;
+    --color-cat-lilac-line: #373039;
+    --color-cat-sky: #20282b;
+    --color-cat-sky-chip: #293438;
+    --color-cat-sky-line: #2d393e;
+    --color-cat-rose: #2d2321;
+    --color-cat-rose-chip: #3a2c29;
+    --color-cat-rose-line: #3d2f2b;
+    --color-cat-stone: #272522;
+    --color-cat-stone-chip: #322f2b;
+    --color-cat-stone-line: #36332e;
+
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.2), 0 2px 8px rgb(0 0 0 / 0.16);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.2), 0 14px 32px -8px rgb(0 0 0 / 0.45);
+    --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.3), 0 24px 56px -12px rgb(0 0 0 / 0.55);
+    --shadow-button: inset 0 -3px 0 rgb(0 0 0 / 0.14), 0 6px 16px -6px rgb(0 0 0 / 0.5);
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
   }
