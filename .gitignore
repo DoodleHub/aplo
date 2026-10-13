@@ -40,4 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/prompt-materials
+/prompt-materials!.env.local.example

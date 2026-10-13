@@ -1,26 +1,193 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ==========================================================================
+   aplo design system — tokens
+   Soft, warm, paper-like. Sage is the voice; category tints are the accents.
+   See DESIGN_SYSTEM.md and /design-system for usage.
+   ========================================================================== */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  /* Typography */
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), var(--font-body), ui-sans-serif, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--letter-spacing: 0.16em;
+  --text-eyebrow--line-height: 1rem;
+
+  /* Surfaces */
+  --color-canvas: #faf9f5; /* main background */
+  --color-sidebar: #f0f1ea; /* sidebar */
+  --color-surface: #ffffff; /* cards, inputs */
+  --color-wash: #eaede0; /* hero / prompt */
+  --color-wash-strong: #e6e9db; /* quote card */
+
+  /* Lines */
+  --color-line: #e9e8e0;
+  --color-line-strong: #dcdbd1;
+
+  /* Ink */
+  --color-ink: #363e37; /* headings & primary text */
+  --color-ink-soft: #5c625b;
+  --color-muted: #85867b; /* body copy */
+  --color-subtle: #999b91; /* meta */
+  --color-faint: #b3b4ad; /* placeholders, disabled */
+
+  /* Brand — sage */
+  --color-sage-50: #f3f5ee;
+  --color-sage-100: #e9ece0;
+  --color-sage-200: #e0e6d8;
+  --color-sage-300: #cdd5c3;
+  --color-sage-400: #abb995;
+  --color-sage-500: #748263;
+  --color-sage-600: #4e684f; /* primary */
+  --color-sage-700: #3e553f;
+  --color-sage-800: #314332;
+
+  /* Accents */
+  --color-heart: #a48379;
+  --color-danger: #b4574a;
+  --color-danger-soft: #f6e4e0;
+
+  /* Category palettes: tint (card), chip, dot */
+  --color-cat-sage: #e8ebe0;
+  --color-cat-sage-chip: #e8ebe0;
+  --color-cat-sage-dot: #909e7f;
+  --color-cat-sand: #e8dfcd;
+  --color-cat-sand-chip: #f2e8d6;
+  --color-cat-sand-dot: #ceba7d;
+  --color-cat-lilac: #ece5ed;
+  --color-cat-lilac-chip: #ece5ed;
+  --color-cat-lilac-dot: #b4a1b8;
+  --color-cat-sky: #e3ebee;
+  --color-cat-sky-chip: #e3ebee;
+  --color-cat-sky-dot: #95adb9;
+  --color-cat-rose: #f1e2de;
+  --color-cat-rose-chip: #f4e7e3;
+  --color-cat-rose-dot: #cf9a8e;
+  --color-cat-stone: #e9e6e1;
+  --color-cat-stone-chip: #eeebe6;
+  --color-cat-stone-dot: #a9a196;
+
+  /* Radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  /* Elevation — warm, diffuse */
+  --shadow-soft: 0 1px 2px rgb(54 62 55 / 0.04), 0 2px 8px rgb(54 62 55 / 0.03);
+  --shadow-lift: 0 2px 4px rgb(54 62 55 / 0.04), 0 14px 32px -8px rgb(54 62 55 / 0.14);
+  --shadow-pop: 0 4px 12px rgb(54 62 55 / 0.08), 0 24px 56px -12px rgb(54 62 55 / 0.22);
+  --shadow-button: inset 0 -3px 0 rgb(0 0 0 / 0.18), 0 6px 16px -6px rgb(78 104 79 / 0.55);
+
+  /* Motion */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-fade-up: fade-up 0.5s var(--ease-soft) both;
+  --animate-fade-in: fade-in 0.25s var(--ease-soft) both;
+  --animate-pop-in: pop-in 0.22s var(--ease-soft) both;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-twinkle: twinkle 3.2s ease-in-out infinite;
+  --animate-heart: heart 0.45s var(--ease-spring);
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.97);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      opacity: 0.55;
+      transform: scale(0.82) rotate(12deg);
+    }
+  }
+  @keyframes heart {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.28);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--color-sage-200);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-sage-500);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+@utility tracking-display {
+  letter-spacing: -0.035em;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
