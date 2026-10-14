@@ -4,7 +4,8 @@ import { useParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { palette } from "@/lib/palette";
 import { ButtonLink } from "@/components/ui/button";
-import { PlusIcon } from "@/components/icons";
+import { GlobeIcon, LockIcon, PlusIcon } from "@/components/icons";
+import { useShell } from "./app-shell";
 import { CategoryMenu } from "./category-actions";
 import { EmptyState, EntryGrid } from "./entry-grid";
 import { Footer } from "./home-view";
@@ -17,6 +18,7 @@ export function CategoryRoute() {
 
 export function CategoryView({ id }: { id: string }) {
   const { categoryById, entries } = useJournal();
+  const { openCategoryDialog } = useShell();
   const category = categoryById.get(id);
 
   if (!category) {
@@ -52,8 +54,17 @@ export function CategoryView({ id }: { id: string }) {
           <h1 className="mt-4 font-display text-[2.1rem] leading-[1.1] font-semibold tracking-display text-ink sm:text-[2.5rem]">
             {category.name}
           </h1>
-          <p className="mt-2 text-[1.05rem] text-muted">
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-[1.05rem] text-muted">
             {inCategory.length} {inCategory.length === 1 ? "thought" : "thoughts"} tucked away
+            <button
+              type="button"
+              onClick={() => openCategoryDialog(category)}
+              title="Change who can see this corner"
+              className="inline-flex h-7 items-center gap-1.5 rounded-full bg-surface/60 px-2.5 text-xs font-medium text-ink-soft transition-colors hover:bg-surface/90 hover:text-ink"
+            >
+              {category.is_public ? <GlobeIcon size={13} /> : <LockIcon size={13} />}
+              {category.is_public ? "Shared in Discover" : "Private"}
+            </button>
           </p>
         </div>
         <div className="relative flex items-center gap-2">

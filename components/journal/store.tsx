@@ -15,12 +15,14 @@ import { createClient } from "@/lib/supabase/client";
 import { applyOps, loadOutbox, loadSnapshot, saveSnapshot } from "@/lib/local-db";
 import { createSyncQueue } from "@/lib/sync";
 import { useToast } from "@/components/ui/toast";
-import type { Category, CategoryInput, Entry, EntryPatch } from "@/lib/types";
+import type { Category, CategoryInput, Entry, EntryPatch, Profile } from "@/lib/types";
 
 export type JournalUser = { id: string; email: string };
 
 type JournalApi = {
   user: JournalUser;
+  /** The pen name shown next to this person's shared thoughts. */
+  profile: Profile;
   timeZone: string;
   /** Request time from the server, so "today" renders the same on server and client. */
   now: string;
@@ -37,6 +39,7 @@ type JournalApi = {
   updateEntry: (id: string, patch: EntryPatch) => Promise<boolean>;
   toggleFavorite: (id: string) => void;
   deleteEntry: (id: string) => void;
+  updateProfile: (profile: Profile) => Promise<boolean>;
 };
 
 const JournalContext = createContext<JournalApi | null>(null);
@@ -50,6 +53,7 @@ const byNewest = (a: Entry, b: Entry) => b.created_at.localeCompare(a.created_at
 
 export function JournalProvider({
   user,
+  initialProfile,
   initialCategories,
   initialEntries,
   initialTimeZone,
@@ -57,6 +61,7 @@ export function JournalProvider({
   children,
 }: {
   user: JournalUser;
+  initialProfile: Profile;
   now: string;
   initialCategories: Category[];
   initialEntries: Entry[];
@@ -67,6 +72,7 @@ export function JournalProvider({
   const toast = useToast();
   const [categories, setCategories] = useState(initialCategories);
   const [entries, setEntries] = useState(initialEntries);
+  const [profile, setProfile] = useState(initialProfile);
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     getLocalTimeZone,
@@ -150,6 +156,7 @@ export function JournalProvider({
         name: input.name.trim(),
         emoji: input.emoji,
         color: input.color,
+        is_public: input.is_public,
         position: Math.max(-1, ...categories.map((c) => c.position)) + 1,
         created_at: new Date().toISOString(),
       };
@@ -287,9 +294,25 @@ export function JournalProvider({
     [entries, sync, fail, toast],
   );
 
+  // Sent straight away rather than through the outbox: it's rare, and only matters online.
+  const updateProfile = useCallback<JournalApi["updateProfile"]>(
+    async (next) => {
+      const previous = profile;
+      const trimmed = { display_name: next.display_name.trim(), emoji: next.emoji };
+      setProfile(trimmed);
+      const { error } = await supabase.from("profiles").upsert({ id: user.id, ...trimmed });
+      if (!error) return true;
+      setProfile(previous);
+      fail("We couldn’t update your profile. Please try again.", error);
+      return false;
+    },
+    [profile, supabase, user.id, fail],
+  );
+
   const api = useMemo<JournalApi>(
     () => ({
       user,
+      profile,
       timeZone,
       now,
       pendingWrites,
@@ -304,9 +327,11 @@ export function JournalProvider({
       updateEntry,
       toggleFavorite,
       deleteEntry,
+      updateProfile,
     }),
     [
       user,
+      profile,
       timeZone,
       now,
       pendingWrites,
@@ -321,6 +346,7 @@ export function JournalProvider({
       updateEntry,
       toggleFavorite,
       deleteEntry,
+      updateProfile,
     ],
   );
 

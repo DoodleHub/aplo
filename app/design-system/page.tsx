@@ -70,10 +70,10 @@ const swatches: Array<{ group: string; items: Array<[string, string, string]> }>
 ];
 
 const sampleCategories: Category[] = [
-  { id: "1", name: "Daily life", emoji: "🌱", color: "sage", position: 0, created_at: "" },
-  { id: "2", name: "Gratitude", emoji: "☀️", color: "sand", position: 1, created_at: "" },
-  { id: "3", name: "Personal growth", emoji: "🌷", color: "lilac", position: 2, created_at: "" },
-  { id: "4", name: "Dreams & ideas", emoji: "☁️", color: "sky", position: 3, created_at: "" },
+  { id: "1", name: "Daily life", emoji: "🌱", color: "sage", is_public: false, position: 0, created_at: "" },
+  { id: "2", name: "Gratitude", emoji: "☀️", color: "sand", is_public: false, position: 1, created_at: "" },
+  { id: "3", name: "Personal growth", emoji: "🌷", color: "lilac", is_public: false, position: 2, created_at: "" },
+  { id: "4", name: "Dreams & ideas", emoji: "☁️", color: "sky", is_public: false, position: 3, created_at: "" },
 ];
 
 const sampleEntries: Entry[] = [
@@ -85,6 +85,7 @@ const sampleEntries: Entry[] = [
       "Took the long way home today. No podcast, no scrolling. Just the rustle of leaves and a little room to breathe.",
     mood: "☺️",
     is_favorite: false,
+    visibility: "inherit",
     created_at: "2026-10-13T16:00:00Z",
     updated_at: "2026-10-13T16:00:00Z",
   },
@@ -96,6 +97,7 @@ const sampleEntries: Entry[] = [
       "Warm coffee. A good conversation. Sunlight on the kitchen floor. There’s so much to love about an ordinary day.",
     mood: "🥰",
     is_favorite: true,
+    visibility: "inherit",
     created_at: "2026-10-12T16:00:00Z",
     updated_at: "2026-10-12T16:00:00Z",
   },

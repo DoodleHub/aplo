@@ -1,13 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
+import { pluralize } from "@/lib/format";
 import { CATEGORY_EMOJIS, palette } from "@/lib/palette";
 import { CATEGORY_COLORS, type Category, type CategoryColor } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/field";
-import { CheckIcon } from "@/components/icons";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/toast";
+import { CheckIcon, GlobeIcon, LockIcon } from "@/components/icons";
 import { useJournal } from "./store";
 
 export function CategoryDialog({
@@ -43,12 +47,15 @@ function CategoryForm({
   onDone: () => void;
   onCreated?: (category: Category) => void;
 }) {
-  const { categories, createCategory, updateCategory } = useJournal();
+  const router = useRouter();
+  const toast = useToast();
+  const { categories, entries, profile, createCategory, updateCategory } = useJournal();
   const [name, setName] = useState(category?.name ?? "");
   const [emoji, setEmoji] = useState(category?.emoji ?? CATEGORY_EMOJIS[4]);
   const [color, setColor] = useState<CategoryColor>(
     category?.color ?? CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length],
   );
+  const [isPublic, setIsPublic] = useState(category?.is_public ?? false);
   const [error, setError] = useState<string>();
 
   const submit = (e: FormEvent) => {
@@ -61,12 +68,22 @@ function CategoryForm({
     if (taken) return setError("You already have a corner with that name.");
 
     if (category) {
-      updateCategory(category.id, { name: trimmed, emoji, color });
+      updateCategory(category.id, { name: trimmed, emoji, color, is_public: isPublic });
+      if (isPublic !== category.is_public) announceSharing(category.id, trimmed);
     } else {
-      const created = createCategory({ name: trimmed, emoji, color });
+      const created = createCategory({ name: trimmed, emoji, color, is_public: isPublic });
       onCreated?.(created);
     }
     onDone();
+  };
+
+  const announceSharing = (id: string, name: string) => {
+    if (!isPublic) return toast.show(`“${name}” is private again.`);
+    const shared = entries.filter((e) => e.category_id === id && (e.visibility ?? "inherit") === "inherit").length;
+    toast.show(
+      shared > 0 ? `${pluralize(shared, "thought")} from “${name}” now in Discover.` : `“${name}” is now shared.`,
+      { label: "View", onClick: () => router.push("/discover") },
+    );
   };
 
   return (
@@ -146,6 +163,18 @@ function CategoryForm({
           ))}
         </div>
       </fieldset>
+
+      <Switch
+        checked={isPublic}
+        onChange={setIsPublic}
+        icon={isPublic ? <GlobeIcon size={16} /> : <LockIcon size={16} />}
+        label="Share in Discover"
+        description={
+          isPublic
+            ? `Thoughts here appear as ${profile.emoji} ${profile.display_name}. You can still keep any one of them private.`
+            : "Only you can see this corner."
+        }
+      />
 
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" onClick={onDone}>

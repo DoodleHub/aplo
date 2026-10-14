@@ -52,6 +52,7 @@ function useCrumb(): Array<{ label: string; href?: string }> {
   const { categoryById, entries } = useJournal();
 
   if (pathname === "/favorites") return [{ label: "Favorites" }];
+  if (pathname === "/discover") return [{ label: "Discover" }];
   if (pathname === "/new") return [{ label: "New entry" }];
   if (pathname.startsWith("/c/")) {
     return [{ label: categoryById.get(pathname.slice(3))?.name ?? "Category" }];

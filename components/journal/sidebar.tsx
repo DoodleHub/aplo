@@ -10,8 +10,19 @@ import { Logo } from "@/components/brand";
 import { Dot } from "@/components/ui/chip";
 import { Menu } from "@/components/ui/menu";
 import { ThemeSwitch } from "@/components/theme";
-import { FlowerIcon, HeartIcon, JournalIcon, LogoutIcon, PlusIcon, SmileIcon } from "@/components/icons";
+import {
+  CompassIcon,
+  FlowerIcon,
+  GlobeIcon,
+  HeartIcon,
+  JournalIcon,
+  LogoutIcon,
+  PencilIcon,
+  PlusIcon,
+} from "@/components/icons";
+import { useShell } from "./app-shell";
 import { CategoryMenu } from "./category-actions";
+import { Avatar } from "./profile-dialog";
 import { useJournal } from "./store";
 
 export function Sidebar({
@@ -22,7 +33,8 @@ export function Sidebar({
   onCreateCategory: () => void;
 }) {
   const pathname = usePathname();
-  const { categories, countByCategory, entries, user, pendingWrites } = useJournal();
+  const { categories, countByCategory, entries, user, profile, pendingWrites } = useJournal();
+  const { openProfileDialog } = useShell();
   const favorites = entries.filter((e) => e.is_favorite).length;
 
   return (
@@ -41,6 +53,14 @@ export function Sidebar({
           trailing={favorites > 0 ? favorites : undefined}
         >
           Favorites
+        </NavItem>
+        <NavItem
+          href="/discover"
+          active={pathname === "/discover"}
+          icon={<CompassIcon size={18} />}
+          onNavigate={onNavigate}
+        >
+          Discover
         </NavItem>
       </nav>
 
@@ -76,7 +96,11 @@ export function Sidebar({
                     color={category.color}
                     className="transition-transform duration-300 ease-spring group-hover:scale-125"
                   />
-                  <span className="flex-1 truncate">{category.name}</span>
+                  <span className="min-w-0 truncate">{category.name}</span>
+                  {category.is_public && (
+                    <GlobeIcon size={13} className="-ml-1 shrink-0 text-subtle" aria-label="Shared" aria-hidden={false} role="img" />
+                  )}
+                  <span className="flex-1" />
                   <span className="text-xs tabular-nums text-subtle transition-opacity duration-150 pointer-fine:group-hover/row:opacity-0 pointer-fine:group-focus-within/row:opacity-0 pointer-fine:group-has-[[aria-expanded=true]]/row:opacity-0">
                     {countByCategory.get(category.id) ?? 0}
                   </span>
@@ -121,6 +145,11 @@ export function Sidebar({
         }
         items={[
           {
+            label: "Edit pen name",
+            icon: <PencilIcon size={17} />,
+            onSelect: openProfileDialog,
+          },
+          {
             label: "Sign out",
             icon: <LogoutIcon size={17} />,
             onSelect: async () => {
@@ -143,11 +172,9 @@ export function Sidebar({
             {...props}
             className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-colors hover:bg-sage-100/70"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-avatar text-ink">
-              <SmileIcon size={20} />
-            </span>
+            <Avatar emoji={profile.emoji} size="lg" />
             <span className="min-w-0">
-              <span className="block truncate text-[0.95rem] text-ink">Your little space</span>
+              <span className="block truncate text-[0.95rem] text-ink">{profile.display_name}</span>
               <span className="block truncate text-xs text-muted">Make yourself at home</span>
             </span>
           </button>

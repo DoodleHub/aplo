@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/cn";
 import { shortDate, wordCount } from "@/lib/format";
-import type { Category, Entry } from "@/lib/types";
+import { isShared, type Category, type Entry } from "@/lib/types";
 import { Chip } from "@/components/ui/chip";
-import { HeartIcon } from "@/components/icons";
+import { GlobeIcon, HeartIcon } from "@/components/icons";
 
 export function EntryCard({
   entry,
@@ -70,8 +70,13 @@ export function EntryCard({
       </p>
 
       <div className="mt-auto flex items-end justify-between pt-5">
-        <span className="text-xs text-subtle">
+        <span className="flex items-center gap-1.5 text-xs text-subtle">
           {shortDate(entry.created_at, timeZone)} · {words} {words === 1 ? "word" : "words"}
+          {isShared(entry, category) && (
+            <span title="Shared in Discover" className="inline-flex items-center gap-1">
+              · <GlobeIcon size={13} aria-hidden={false} role="img" aria-label="Shared in Discover" />
+            </span>
+          )}
         </span>
         {entry.mood && (
           <span className="text-lg leading-none transition-transform duration-300 ease-spring group-hover:scale-125 group-hover:-rotate-6">

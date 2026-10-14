@@ -91,10 +91,17 @@ Map a palette to class names through `lib/palette.ts`. Never build class names d
 | Chip / Dot | `ui/chip.tsx` | Category chip; `stone` is used for "Unsorted" |
 | Segmented | `ui/segmented.tsx` | "All entries / Favorites" tabs |
 | Dialog | `ui/dialog.tsx` | Native `<dialog>`: focus trap, Esc to close, backdrop click to close |
-| Menu | `ui/menu.tsx` | Popover menu with an optional header |
+| Menu | `ui/menu.tsx` | Popover menu with an optional header. Items can have a `description` and act as radio options (`selected`). |
+| Switch | `ui/switch.tsx` | Labelled on/off row, used for "Share in Discover" |
 | Toast | `ui/toast.tsx` | Bottom pill with an optional action, such as Undo |
 | Skeleton | `ui/skeleton.tsx` | Loading placeholders |
 | EntryCard, CategoryCard, HeroPrompt, EmptyState | `journal/*` | Composites from the mock |
+| VisibilityMenu, Avatar | `journal/visibility-menu.tsx`, `journal/profile-dialog.tsx` | Sharing control and the pen-name avatar |
+
+## Sharing
+
+Everything is private by default. A corner can be shared; each entry is "Same as corner", "Shared" or "Only me" (`isShared` in `lib/types.ts`).
+Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pen name and emoji, never by email. Discover reads go through the `discover_feed` / `discover_entry` RPCs, which hide the names of private corners.
 
 ## Voice
 

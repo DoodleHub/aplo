@@ -26,3 +26,17 @@ export const fullDateTime = (iso: string, timeZone: string) =>
     hour: "numeric",
     minute: "2-digit",
   });
+
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/** "just now", "5m ago", "3h ago", "2d ago", then a short date. */
+export function relativeTime(iso: string, timeZone: string, now = Date.now()) {
+  const ago = now - new Date(iso).getTime();
+  if (ago < MINUTE) return "just now";
+  if (ago < HOUR) return `${Math.floor(ago / MINUTE)}m ago`;
+  if (ago < DAY) return `${Math.floor(ago / HOUR)}h ago`;
+  if (ago < 7 * DAY) return `${Math.floor(ago / DAY)}d ago`;
+  return shortDate(iso, timeZone);
+}

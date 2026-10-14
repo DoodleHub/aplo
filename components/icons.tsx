@@ -165,3 +165,24 @@ export const CloudOffIcon = (p: IconProps) => (
     <path d="M3 3l18 18" />
   </Icon>
 );
+
+export const GlobeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M3.5 12h17M12 3.5c2.3 2.4 3.4 5.2 3.4 8.5s-1.1 6.1-3.4 8.5c-2.3-2.4-3.4-5.2-3.4-8.5S9.7 5.9 12 3.5Z" />
+  </Icon>
+);
+
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
+    <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+  </Icon>
+);
+
+export const CompassIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="m15.2 8.8-1.9 4.5-4.5 1.9 1.9-4.5 4.5-1.9Z" />
+  </Icon>
+);

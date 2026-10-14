@@ -6,12 +6,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { cn } from "@/lib/cn";
 import { fullDateTime, wordCount } from "@/lib/format";
 import { MOODS, palette } from "@/lib/palette";
-import type { Entry } from "@/lib/types";
+import { isShared, type Entry, type Visibility } from "@/lib/types";
 import { Button, IconButton } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
+import { useToast } from "@/components/ui/toast";
 import { ArrowLeftIcon, CheckIcon, HeartIcon, MoreIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
 import { useJournal } from "./store";
+import { VisibilityMenu } from "./visibility-menu";
 
 const PROMPTS = [
   "What’s on your mind?",
@@ -25,7 +27,7 @@ const PROMPTS = [
 
 const SAVE_DELAY = 600;
 
-type Draft = Pick<Entry, "title" | "content" | "mood" | "category_id" | "is_favorite">;
+type Draft = Pick<Entry, "title" | "content" | "mood" | "category_id" | "is_favorite" | "visibility">;
 type Status = "idle" | "saving" | "saved" | "error";
 
 export function Editor({
@@ -39,8 +41,9 @@ export function Editor({
   defaultCategoryId?: string | null;
 }) {
   const router = useRouter();
-  const { categories, categoryById, createEntry, updateEntry, deleteEntry, timeZone } = useJournal();
-  const { openCategoryDialog } = useShell();
+  const { categories, categoryById, profile, createEntry, updateEntry, deleteEntry, timeZone } = useJournal();
+  const { openCategoryDialog, openProfileDialog } = useShell();
+  const toast = useToast();
 
   const [draft, setDraft] = useState<Draft>(() => ({
     title: entry?.title ?? "",
@@ -48,6 +51,7 @@ export function Editor({
     mood: entry?.mood ?? null,
     category_id: entry ? entry.category_id : (defaultCategoryId ?? null),
     is_favorite: entry?.is_favorite ?? false,
+    visibility: entry?.visibility ?? "inherit",
   }));
   const [status, setStatus] = useState<Status>(entry ? "saved" : "idle");
   const [createdAt] = useState(() => entry?.created_at ?? new Date().toISOString());
@@ -100,6 +104,25 @@ export function Editor({
     clearTimeout(timer.current);
     if (immediate) save();
     else timer.current = setTimeout(save, SAVE_DELAY);
+  };
+
+  const corner = draft.category_id ? categoryById.get(draft.category_id) : undefined;
+  const shared = isShared(draft, corner);
+
+  /** Changes who can read this thought, and says so when it starts showing in Discover. */
+  const share = (patch: Pick<Partial<Draft>, "visibility" | "category_id">) => {
+    const next = { ...draft, ...patch };
+    const nowShared = isShared(next, next.category_id ? categoryById.get(next.category_id) : undefined);
+    change(patch, true);
+    if (nowShared === shared) return;
+    if (nowShared) {
+      toast.show(`Shared in Discover as ${profile.emoji} ${profile.display_name}.`, {
+        label: "Change name",
+        onClick: openProfileDialog,
+      });
+    } else {
+      toast.show("Only you can see this thought now.");
+    }
   };
 
   // Flush pending changes when leaving the page.
@@ -167,6 +190,11 @@ export function Editor({
         </Link>
         <SaveStatus status={status} />
         <div className="ml-auto flex items-center gap-1">
+          <VisibilityMenu
+            visibility={draft.visibility}
+            category={corner}
+            onChange={(visibility: Visibility) => share({ visibility })}
+          />
           <IconButton
             label={draft.is_favorite ? "Remove from favorites" : "Add to favorites"}
             aria-pressed={draft.is_favorite}
@@ -217,7 +245,7 @@ export function Editor({
                 key={category.id}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => change({ category_id: selected ? null : category.id }, true)}
+                onClick={() => share({ category_id: selected ? null : category.id })}
                 className={cn(
                   "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[0.82rem] font-medium transition-all duration-200 ease-soft",
                   selected

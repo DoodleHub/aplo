@@ -3,12 +3,17 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
+import { CheckIcon } from "@/components/icons";
 
 type Item = {
   label: string;
+  /** A second, quieter line under the label. */
+  description?: ReactNode;
   icon?: ReactNode;
   onSelect: () => void;
   tone?: "danger";
+  /** Makes the item a radio option, checked when true. */
+  selected?: boolean;
 };
 
 const GAP = 8;
@@ -87,19 +92,28 @@ export function Menu({
             {items.map((item) => (
               <button
                 key={item.label}
-                role="menuitem"
+                role={item.selected === undefined ? "menuitem" : "menuitemradio"}
+                aria-checked={item.selected}
                 type="button"
                 onClick={() => {
                   setOpen(false);
                   item.onSelect();
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
+                  "flex w-full gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
+                  item.description ? "max-w-72 items-start" : "items-center",
                   item.tone === "danger" ? "text-danger hover:bg-danger-soft" : "text-ink hover:bg-sage-50",
+                  item.selected && "bg-sage-50",
                 )}
               >
-                {item.icon}
-                {item.label}
+                {item.icon && <span className={cn("shrink-0", Boolean(item.description) && "mt-px")}>{item.icon}</span>}
+                <span className="min-w-0 flex-1">
+                  <span className={cn("block", item.selected && "font-medium")}>{item.label}</span>
+                  {item.description && (
+                    <span className="mt-0.5 block text-xs leading-snug text-subtle">{item.description}</span>
+                  )}
+                </span>
+                {item.selected && <CheckIcon size={16} className="mt-0.5 shrink-0 text-sage-600" />}
               </button>
             ))}
           </div>,

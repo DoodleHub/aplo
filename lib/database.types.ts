@@ -1,5 +1,5 @@
 // Mirrors supabase/migrations. Regenerate with `supabase gen types typescript` once linked.
-import type { CategoryColor } from "./types";
+import type { CategoryColor, DiscoverEntry, DiscoverItem, Visibility } from "./types";
 
 type CategoryRow = {
   id: string;
@@ -7,6 +7,7 @@ type CategoryRow = {
   name: string;
   emoji: string;
   color: CategoryColor;
+  is_public: boolean;
   position: number;
   created_at: string;
 };
@@ -19,8 +20,16 @@ type EntryRow = {
   content: string;
   mood: string | null;
   is_favorite: boolean;
+  visibility: Visibility;
   created_at: string;
   updated_at: string;
+};
+
+type ProfileRow = {
+  id: string;
+  display_name: string;
+  emoji: string;
+  created_at: string;
 };
 
 type Insert<Row, Required extends keyof Row> = Pick<Row, Required> & Partial<Omit<Row, Required>>;
@@ -40,9 +49,24 @@ export type Database = {
         Update: Partial<EntryRow>;
         Relationships: [];
       };
+      profiles: {
+        Row: ProfileRow;
+        Insert: Insert<ProfileRow, "display_name">;
+        Update: Partial<ProfileRow>;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      discover_feed: {
+        Args: { p_mood?: string | null; p_before?: string | null; p_before_id?: string | null; p_limit?: number };
+        Returns: DiscoverItem[];
+      };
+      discover_entry: {
+        Args: { p_id: string };
+        Returns: DiscoverEntry[];
+      };
+    };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };

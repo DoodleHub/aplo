@@ -9,12 +9,14 @@ import { IconButton } from "@/components/ui/button";
 import { DeleteCategoryDialog } from "./category-actions";
 import { CategoryDialog } from "./category-dialog";
 import { OfflineBanner } from "./offline-banner";
+import { ProfileDialog } from "./profile-dialog";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
 type ShellApi = {
   openCategoryDialog: (category?: Category) => void;
   confirmDeleteCategory: (category: Category) => void;
+  openProfileDialog: () => void;
 };
 
 const ShellContext = createContext<ShellApi | null>(null);
@@ -24,6 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dialog, setDialog] = useState<{ open: boolean; category?: Category }>({ open: false });
   const [deleting, setDeleting] = useState<Category>();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Close the mobile drawer whenever the route changes.
   const [lastPath, setLastPath] = useState(pathname);
@@ -47,6 +50,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => ({
       openCategoryDialog: (category) => setDialog({ open: true, category }),
       confirmDeleteCategory: setDeleting,
+      openProfileDialog: () => {
+        setDrawerOpen(false);
+        setProfileOpen(true);
+      },
     }),
     [],
   );
@@ -104,6 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         onClose={() => setDialog((d) => ({ ...d, open: false }))}
       />
       <DeleteCategoryDialog category={deleting} onClose={() => setDeleting(undefined)} />
+      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </ShellContext>
   );
 }
