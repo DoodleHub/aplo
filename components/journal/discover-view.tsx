@@ -28,6 +28,9 @@ import { Avatar } from "./profile-dialog";
 import { useJournal } from "./store";
 
 const PAGE_SIZE = 18;
+// `discover_feed` sends the first 480 characters as the excerpt; anything shorter is the whole thought.
+const EXCERPT_LENGTH = 480;
+const isCut = (excerpt: string) => [...excerpt].length >= EXCERPT_LENGTH;
 
 type Status = "loading" | "idle" | "loading-more" | "done" | "error";
 
@@ -562,7 +565,7 @@ function Reader({
               <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
                 <FormattedText text={preview?.excerpt ?? ""} />
               </p>
-              <Skeleton className="mt-3 h-4 w-2/3" />
+              {preview && isCut(preview.excerpt) && <Skeleton className="mt-3 h-4 w-2/3" />}
             </div>
           )}
         </div>
