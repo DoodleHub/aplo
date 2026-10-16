@@ -2,6 +2,8 @@
 
 import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import { cn } from "@/lib/cn";
+import { papers } from "@/lib/page-style";
 import { ButtonLink } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Editor } from "./editor";
@@ -61,10 +63,11 @@ export function NewEntry() {
 }
 
 export function EditorSkeleton() {
+  const { profile } = useJournal();
   return (
     <div className="mx-auto max-w-3xl">
       <Skeleton className="mb-5 h-10 w-24" />
-      <div className="rounded-3xl border border-line bg-surface px-5 py-6 sm:px-10 sm:py-9">
+      <div className={cn("rounded-3xl border px-5 py-6 sm:px-10 sm:py-9", papers[profile.paper].page)}>
         <div className="flex gap-2">
           <Skeleton className="h-8 w-24" />
           <Skeleton className="h-8 w-24" />

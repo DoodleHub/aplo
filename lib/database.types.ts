@@ -1,5 +1,5 @@
 // Mirrors supabase/migrations. Regenerate with `supabase gen types typescript` once linked.
-import type { CategoryColor, DiscoverEntry, DiscoverItem, Visibility } from "./types";
+import type { CategoryColor, DiscoverEntry, DiscoverItem, Paper, Pen, Visibility } from "./types";
 
 type CategoryRow = {
   id: string;
@@ -29,6 +29,8 @@ type ProfileRow = {
   id: string;
   display_name: string;
   emoji: string;
+  paper: Paper;
+  pen: Pen;
   created_at: string;
 };
 

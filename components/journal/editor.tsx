@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { fullDateTime, wordCount } from "@/lib/format";
+import { bodyLeading, papers, pens } from "@/lib/page-style";
 import { MOODS, palette } from "@/lib/palette";
 import { isShared, type Entry, type Visibility } from "@/lib/types";
 import { Button, IconButton } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
 import { ArrowLeftIcon, CheckIcon, HeartIcon, MoreIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
+import { PageStyleMenu } from "./page-style-menu";
 import { useJournal } from "./store";
 import { VisibilityMenu } from "./visibility-menu";
 
@@ -139,14 +141,21 @@ export function Editor({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [save]);
 
-  // Grow textareas with their content.
-  useLayoutEffect(() => {
+  const { paper, pen } = profile;
+
+  // Grow textareas with their content, and again once a pen's font has loaded.
+  const fit = useCallback(() => {
     for (const el of [titleRef.current, contentRef.current]) {
       if (!el) continue;
       el.style.height = "auto";
       el.style.height = `${el.scrollHeight}px`;
     }
-  }, [draft.title, draft.content]);
+  }, []);
+  useLayoutEffect(fit, [fit, draft.title, draft.content, paper, pen]);
+  useEffect(() => {
+    document.fonts?.addEventListener("loadingdone", fit);
+    return () => document.fonts?.removeEventListener("loadingdone", fit);
+  }, [fit]);
 
   useEffect(() => {
     if (!entry) titleRef.current?.focus();
@@ -186,10 +195,11 @@ export function Editor({
           className="-ml-2 inline-flex h-10 items-center gap-2 rounded-xl px-3 text-[0.95rem] text-muted transition-colors hover:bg-sage-100 hover:text-ink"
         >
           <ArrowLeftIcon size={18} />
-          Back
+          <span className="max-sm:sr-only">Back</span>
         </Link>
         <SaveStatus status={status} />
         <div className="ml-auto flex items-center gap-1">
+          <PageStyleMenu />
           <VisibilityMenu
             visibility={draft.visibility}
             category={corner}
@@ -236,7 +246,12 @@ export function Editor({
         </div>
       </div>
 
-      <article className="rounded-3xl border border-line bg-surface px-5 py-6 shadow-soft sm:px-10 sm:py-9">
+      <article
+        className={cn(
+          "rounded-3xl border px-5 py-6 shadow-soft transition-[background-color,border-color] duration-500 ease-soft sm:px-10 sm:py-9",
+          papers[paper].page,
+        )}
+      >
         <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
           {categories.map((category) => {
             const selected = draft.category_id === category.id;
@@ -282,7 +297,10 @@ export function Editor({
           maxLength={200}
           placeholder="Give it a little title"
           aria-label="Title"
-          className="mt-6 block w-full resize-none overflow-hidden bg-transparent font-display text-[1.75rem] leading-tight font-semibold tracking-[-0.03em] text-ink outline-none placeholder:text-faint sm:text-[2.1rem]"
+          className={cn(
+            "mt-6 block w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
+            pens[pen].title,
+          )}
         />
         <p className="mt-2 text-sm text-subtle" suppressHydrationWarning>
           {fullDateTime(createdAt, timeZone)}
@@ -294,7 +312,12 @@ export function Editor({
           onChange={(e) => change({ content: e.target.value })}
           placeholder={prompt}
           aria-label="Your thoughts"
-          className="mt-6 block min-h-[38vh] w-full resize-none overflow-hidden bg-transparent text-[1.05rem] leading-[1.85] text-ink outline-none placeholder:text-faint"
+          className={cn(
+            "mt-6 block min-h-[38vh] w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
+            pens[pen].body,
+            bodyLeading(paper, pen),
+            papers[paper].lines,
+          )}
         />
 
         <div className="mt-6 flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
@@ -351,12 +374,14 @@ function SaveStatus({ status }: { status: Status }) {
     >
       {status === "saving" && (
         <>
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sage-400" /> Saving…
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sage-400" />
+          <span className="max-sm:sr-only">Saving…</span>
         </>
       )}
       {status === "saved" && (
         <>
-          <CheckIcon size={14} className="text-sage-500" /> Saved
+          <CheckIcon size={14} className="text-sage-500" />
+          <span className="max-sm:sr-only">Saved</span>
         </>
       )}
       {status === "error" && "Not saved — we’ll retry as you type"}

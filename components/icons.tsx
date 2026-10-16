@@ -186,3 +186,11 @@ export const CompassIcon = (p: IconProps) => (
     <path d="m15.2 8.8-1.9 4.5-4.5 1.9 1.9-4.5 4.5-1.9Z" />
   </Icon>
 );
+
+export const PaperIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6.5 3.5h8l4 4v12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z" />
+    <path d="M14.5 3.5v4h4" />
+    <path d="M8.5 12.5c1-.9 1.8-.9 2.6 0s1.7.9 2.6 0 1.5-.7 1.8-.4M8.5 16.5h4.5" strokeWidth={1.3} />
+  </Icon>
+);

@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { applyOps, loadOutbox, loadSnapshot, saveSnapshot } from "@/lib/local-db";
 import { createSyncQueue } from "@/lib/sync";
 import { useToast } from "@/components/ui/toast";
-import type { Category, CategoryInput, Entry, EntryPatch, Profile } from "@/lib/types";
+import type { Category, CategoryInput, Entry, EntryPatch, Profile, WritingStyle } from "@/lib/types";
 
 export type JournalUser = { id: string; email: string };
 
@@ -39,7 +39,9 @@ type JournalApi = {
   updateEntry: (id: string, patch: EntryPatch) => Promise<boolean>;
   toggleFavorite: (id: string) => void;
   deleteEntry: (id: string) => void;
-  updateProfile: (profile: Profile) => Promise<boolean>;
+  updateProfile: (profile: Pick<Profile, "display_name" | "emoji">) => Promise<boolean>;
+  /** Changes the paper or pen used for every thought. Works offline. */
+  setWritingStyle: (patch: Partial<WritingStyle>) => void;
 };
 
 const JournalContext = createContext<JournalApi | null>(null);
@@ -101,6 +103,9 @@ export function JournalProvider({
         setCategories(local.categories);
         setEntries(local.entries.sort(byNewest));
       }
+      // A paper or pen picked offline, still waiting to sync.
+      const style = outbox.flatMap((op) => (op.table === "profiles" && op.kind === "update" ? [op.patch] : []));
+      if (style.length) setProfile((p) => Object.assign({ ...p }, ...style));
       sync.resume(outbox);
       setRestored(true);
     });
@@ -299,14 +304,29 @@ export function JournalProvider({
     async (next) => {
       const previous = profile;
       const trimmed = { display_name: next.display_name.trim(), emoji: next.emoji };
-      setProfile(trimmed);
+      setProfile((p) => ({ ...p, ...trimmed }));
       const { error } = await supabase.from("profiles").upsert({ id: user.id, ...trimmed });
       if (!error) return true;
-      setProfile(previous);
+      setProfile((p) => ({ ...p, display_name: previous.display_name, emoji: previous.emoji }));
       fail("We couldn’t update your profile. Please try again.", error);
       return false;
     },
     [profile, supabase, user.id, fail],
+  );
+
+  const setWritingStyle = useCallback<JournalApi["setWritingStyle"]>(
+    (patch) => {
+      const previous = { paper: profile.paper, pen: profile.pen };
+      setProfile((p) => ({ ...p, ...patch }));
+      sync
+        .run({ table: "profiles", kind: "update", key: user.id, patch })
+        .then(({ error }) => {
+          if (!error) return;
+          setProfile((p) => ({ ...p, ...previous }));
+          fail("We couldn’t save your page style.", error);
+        });
+    },
+    [profile.paper, profile.pen, sync, user.id, fail],
   );
 
   const api = useMemo<JournalApi>(
@@ -328,6 +348,7 @@ export function JournalProvider({
       toggleFavorite,
       deleteEntry,
       updateProfile,
+      setWritingStyle,
     }),
     [
       user,
@@ -347,6 +368,7 @@ export function JournalProvider({
       toggleFavorite,
       deleteEntry,
       updateProfile,
+      setWritingStyle,
     ],
   );
 

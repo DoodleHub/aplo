@@ -25,7 +25,7 @@ export async function getJournal() {
       .select("id, category_id, title, content, mood, is_favorite, visibility, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(1000),
-    supabase.from("profiles").select("display_name, emoji").maybeSingle(),
+    supabase.from("profiles").select("display_name, emoji, paper, pen").maybeSingle(),
     cookies(),
   ]);
 
@@ -38,7 +38,7 @@ export async function getJournal() {
     categories: categories.data as Category[],
     entries: entries.data as Entry[],
     // Every account gets one on sign-up; this only covers a profile that's somehow missing.
-    profile: (profile.data ?? { display_name: "A quiet soul", emoji: "🌿" }) satisfies Profile,
+    profile: (profile.data ?? { display_name: "A quiet soul", emoji: "🌿", paper: "plain", pen: "sans" }) satisfies Profile,
     timeZone: safeTimeZone(cookieStore.get("tz")?.value),
   };
 }

@@ -6,7 +6,7 @@
  */
 import type { Category, Entry } from "@/lib/types";
 
-export type Table = "entries" | "categories";
+export type Table = "entries" | "categories" | "profiles";
 
 export type WriteOp = { opId: string; userId: string; table: Table } & (
   | { kind: "upsert"; row: Record<string, unknown> & { id: string } }
@@ -134,7 +134,9 @@ export function applyOps(
 ): { categories: Category[]; entries: Entry[] } {
   let { categories, entries } = data;
   for (const op of ops) {
-    if (op.table === "entries") {
+    if (op.table === "profiles") {
+      continue;
+    } else if (op.table === "entries") {
       entries = applyOp(entries, op);
     } else {
       categories = applyOp(categories, op);

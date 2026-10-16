@@ -33,8 +33,17 @@ export type EntryPatch = Partial<
   Pick<Entry, "category_id" | "title" | "content" | "mood" | "is_favorite" | "visibility">
 >;
 
-/** The pen name shown next to shared thoughts. */
-export type Profile = { display_name: string; emoji: string };
+export const PAPERS = ["plain", "ruled", "dotted", "parchment"] as const;
+export type Paper = (typeof PAPERS)[number];
+
+export const PENS = ["sans", "caveat", "patrick", "kalam"] as const;
+export type Pen = (typeof PENS)[number];
+
+/** How pages look while writing: the paper and the pen. Applies to every thought. */
+export type WritingStyle = { paper: Paper; pen: Pen };
+
+/** The pen name shown next to shared thoughts, and how this person likes to write. */
+export type Profile = { display_name: string; emoji: string } & WritingStyle;
 
 /**
  * Whether an entry shows in Discover. Rows saved on the device before sharing existed have

@@ -57,6 +57,19 @@ Map a palette to class names through `lib/palette.ts`. Never build class names d
 | Meta | 12 | `text-xs text-subtle` |
 | Eyebrow | 11 | `text-eyebrow font-semibold uppercase` (0.16em tracking) |
 
+### Pages: paper and pen
+
+Each person picks how their editor page looks with the **Page style** button in the editor toolbar. The choice is saved on their profile (`profiles.paper`, `profiles.pen`), syncs through the offline outbox, and applies to every thought. Defaults keep the original look: `plain` paper and the `sans` pen.
+
+| Paper | Utility | Notes |
+| --- | --- | --- |
+| Plain | `bg-surface` | The default |
+| Notebook | `paper-ruled` + `page-rules` | 2rem rules, red margin line from `sm` |
+| Dot grid | `paper-dotted` + `page-dots` | 1rem dot grid |
+| Old paper | `paper-parchment` | Warm cream with a soft vignette |
+
+Pens: Clean (DM Sans), Breezy (Caveat), Neat (Patrick Hand) and Felt tip (Kalam). Handwriting fonts aren't preloaded, so they only download once someone uses them. On lined paper the body always uses `leading-[2rem]` so writing sits on the rules. Map paper and pen to class names through `lib/page-style.ts`. Paper tokens (`paper-*`) have light and dark values.
+
 ## Shape and elevation
 
 **Radius**
@@ -91,6 +104,7 @@ Map a palette to class names through `lib/palette.ts`. Never build class names d
 | Chip / Dot | `ui/chip.tsx` | Category chip; `stone` is used for "Unsorted" |
 | Segmented | `ui/segmented.tsx` | "All entries / Favorites" tabs |
 | Dialog | `ui/dialog.tsx` | Native `<dialog>`: focus trap, Esc to close, backdrop click to close |
+| Popover | `ui/popover.tsx` | Anchored floating panel used by Menu and the page style picker |
 | Menu | `ui/menu.tsx` | Popover menu with an optional header. Items can have a `description` and act as radio options (`selected`). |
 | Switch | `ui/switch.tsx` | Labelled on/off row, used for "Share in Discover" |
 | Toast | `ui/toast.tsx` | Bottom pill with an optional action, such as Undo |

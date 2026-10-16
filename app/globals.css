@@ -12,6 +12,10 @@
   /* Typography */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-heading), var(--font-body), ui-sans-serif, sans-serif;
+  /* Handwriting pens, editor only (lib/page-style.ts) */
+  --font-caveat: var(--font-pen-caveat), "Segoe Print", "Bradley Hand", cursive;
+  --font-patrick: var(--font-pen-patrick), "Segoe Print", "Bradley Hand", cursive;
+  --font-kalam: var(--font-pen-kalam), "Segoe Print", "Bradley Hand", cursive;
 
   --text-eyebrow: 0.6875rem;
   --text-eyebrow--letter-spacing: 0.16em;
@@ -80,6 +84,15 @@
   --color-cat-stone-chip: #eeebe6;
   --color-cat-stone-dot: #a9a196;
   --color-cat-stone-line: #dfdbd4;
+
+  /* Journal paper — the editor's page (lib/page-style.ts) */
+  --color-paper-ruled: #fffefa;
+  --color-paper-dotted: #fdfcf8;
+  --color-paper-parchment: #f7f0e1;
+  --color-paper-parchment-line: #e8dcc4;
+  --color-paper-rule: rgb(122 158 178 / 0.3);
+  --color-paper-margin: rgb(207 128 116 / 0.4);
+  --color-paper-dot: rgb(54 62 55 / 0.2);
 
   /* Radii */
   --radius-sm: 0.5rem;
@@ -161,6 +174,14 @@
 
 /* Dark — a quiet evening version of the same paper. Set via data-theme on <html>. */
 @layer base {
+  :root {
+    /* Fine fibres for paper pages: dark specks on light paper, light specks on dark. */
+    --paper-grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 .5 0 0 0 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --paper-grain-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .96 0 0 0 0 .88 .4 0 0 0 -.17'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --paper-grain: var(--paper-grain-dark);
+    --paper-vignette: rgb(150 112 60 / 0.1);
+  }
+
   [data-theme="dark"] {
     color-scheme: dark;
 
@@ -217,6 +238,16 @@
     --color-cat-stone-chip: #322f2b;
     --color-cat-stone-line: #36332e;
 
+    --color-paper-ruled: #222622;
+    --color-paper-dotted: #222622;
+    --color-paper-parchment: #29261f;
+    --color-paper-parchment-line: #3a3529;
+    --color-paper-rule: rgb(149 173 185 / 0.14);
+    --color-paper-margin: rgb(207 154 142 / 0.24);
+    --color-paper-dot: rgb(230 232 223 / 0.14);
+    --paper-grain: var(--paper-grain-light);
+    --paper-vignette: rgb(0 0 0 / 0.28);
+
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.2), 0 2px 8px rgb(0 0 0 / 0.16);
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.2), 0 14px 32px -8px rgb(0 0 0 / 0.45);
     --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.3), 0 24px 56px -12px rgb(0 0 0 / 0.55);
@@ -248,6 +279,42 @@
 
 @utility tracking-display {
   letter-spacing: -0.035em;
+}
+
+/* Journal pages. One writing line is 2rem; rules sit just under the baseline of each line. */
+@utility paper-ruled {
+  background-color: var(--color-paper-ruled);
+  background-image: var(--paper-grain);
+  @media (width >= 40rem) {
+    /* the red margin line of a notebook */
+    background-image:
+      linear-gradient(to right, transparent 1.6rem, var(--color-paper-margin) 1.6rem, var(--color-paper-margin) calc(1.6rem + 1px), transparent calc(1.6rem + 1px)),
+      var(--paper-grain);
+  }
+}
+
+@utility paper-dotted {
+  background-color: var(--color-paper-dotted);
+  background-image: var(--paper-grain);
+}
+
+@utility paper-parchment {
+  background-color: var(--color-paper-parchment);
+  background-image:
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, var(--paper-vignette)),
+    var(--paper-grain);
+}
+
+@utility page-rules {
+  background-image: linear-gradient(transparent calc(2rem - 1px), var(--color-paper-rule) calc(2rem - 1px));
+  background-size: 100% 2rem;
+  background-position: 0 -0.4rem;
+}
+
+@utility page-dots {
+  background-image: radial-gradient(circle, var(--color-paper-dot) 1.1px, transparent 1.6px);
+  background-size: 1rem 1rem;
+  background-position: -0.5rem 0.0625rem;
 }
 
 @utility scrollbar-none {
