@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { cn } from "@/lib/cn";
 import { fullDateTime, relativeTime } from "@/lib/format";
 import { MOODS } from "@/lib/palette";
@@ -79,6 +79,9 @@ export function DiscoverView() {
     if (index >= 0 && next) window.history.replaceState(null, "", `/discover?entry=${next.id}`);
   };
   const index = items.findIndex((item) => item.id === openId);
+  const previousId = index > 0 ? items[index - 1].id : undefined;
+  const nextId = index >= 0 ? items[index + 1]?.id : undefined;
+  const neighbors = useMemo(() => [previousId, nextId], [previousId, nextId]);
 
   return (
     <div>
@@ -116,6 +119,7 @@ export function DiscoverView() {
       <Reader
         id={openId}
         preview={index >= 0 ? items[index] : undefined}
+        neighbors={neighbors}
         onClose={close}
         onPrevious={index > 0 ? () => step(-1) : undefined}
         onNext={index >= 0 && index < items.length - 1 ? () => step(1) : undefined}
@@ -443,34 +447,43 @@ function FeedSkeleton({ count = 6 }: { count?: number }) {
 function Reader({
   id,
   preview,
+  neighbors,
   onClose,
   onPrevious,
   onNext,
 }: {
   id: string | null;
   preview?: DiscoverItem;
+  /** Ids of the thoughts either side of this one, loaded ahead of time. */
+  neighbors: (string | undefined)[];
   onClose: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
 }) {
   const { timeZone } = useJournal();
-  const [loaded, setLoaded] = useState<{ id: string; entry: DiscoverEntry | null; failed?: boolean }>();
-  const entry = loaded?.id === id ? loaded.entry : undefined;
-  const failed = loaded?.id === id && loaded.failed;
+  // Every thought fetched while browsing, so stepping back and forth shows the full text straight away.
+  const [loaded, setLoaded] = useState<Record<string, { entry: DiscoverEntry | null; failed?: boolean }>>({});
+  const requested = useRef(new Set<string>());
+  const entry = id ? loaded[id]?.entry : undefined;
+  const failed = id ? loaded[id]?.failed : false;
 
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    fetchEntry(id)
-      .then((result) => !cancelled && setLoaded({ id, entry: result }))
+  const load = useCallback((target: string) => {
+    if (requested.current.has(target)) return;
+    requested.current.add(target);
+    fetchEntry(target)
+      .then((result) => setLoaded((all) => ({ ...all, [target]: { entry: result } })))
       .catch((error) => {
         console.error("Couldn’t open that thought", error);
-        if (!cancelled) setLoaded({ id, entry: null, failed: true });
+        requested.current.delete(target);
+        setLoaded((all) => (all[target]?.entry ? all : { ...all, [target]: { entry: null, failed: true } }));
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  }, []);
+
+  // The open thought, plus its neighbours ahead of time so the next step doesn’t wait.
+  useEffect(() => {
+    if (!id) return;
+    for (const target of [id, ...neighbors]) if (target) load(target);
+  }, [id, neighbors, load]);
 
   useEffect(() => {
     if (!id) return;
@@ -483,14 +496,14 @@ function Reader({
   }, [id, onPrevious, onNext]);
 
   // Each thought starts at its top, not wherever the last one was scrolled to.
-  const body = useRef<HTMLDivElement>(null);
+  const nav = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const dialog = body.current?.closest("dialog");
+    const dialog = nav.current?.closest("dialog");
     if (dialog) dialog.scrollTop = 0;
   }, [id]);
 
   const shown = entry ?? preview;
-  const missing = loaded?.id === id && !entry;
+  const missing = id ? id in loaded && !entry : false;
   const title = shown ? shown.title.trim() || "Untitled thought" : "A shared thought";
 
   return (
@@ -498,9 +511,7 @@ function Reader({
       open={Boolean(id)}
       onClose={onClose}
       title={title}
-      // A fixed height keeps the previous/next buttons still as thoughts of different lengths come and go.
-      fill
-      className="h-[min(40rem,calc(100dvh-2rem))] max-w-2xl overflow-y-auto overscroll-contain"
+      className="max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto overscroll-contain"
       description={
         shown && (
           <span className="mt-2 flex items-center gap-2">
@@ -516,50 +527,48 @@ function Reader({
         )
       }
     >
-      <div ref={body} className="flex-1">
-        {missing && !failed ? (
-          <EmptyState emoji="🍃" title="This thought isn’t shared anymore">
-            Its author may have made it private again.
-          </EmptyState>
-        ) : failed ? (
-          <EmptyState emoji="☁️" title="We couldn’t open this thought">
-            Check your connection and try again.
-          </EmptyState>
-        ) : !shown ? (
-          <ReaderSkeleton />
-        ) : (
-          <div key={shown.id} className="animate-fade-in">
-            {(shown.category_name || shown.mood) && (
-              <div className="mb-5 flex flex-wrap items-center gap-2">
-                {shown.category_name && shown.category_color && (
-                  <Chip color={shown.category_color} emoji={shown.category_emoji ?? undefined}>
-                    {shown.category_name}
-                  </Chip>
-                )}
-                {shown.mood && (
-                  <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-sage-50 px-2 text-[0.8rem] text-muted">
-                    {shown.mood} {MOODS.find((m) => m.emoji === shown.mood)?.label}
-                  </span>
-                )}
-              </div>
-            )}
-            {entry ? (
-              <p className="animate-fade-in text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
-                <FormattedText text={entry.content} />
+      {missing && !failed ? (
+        <EmptyState emoji="🍃" title="This thought isn’t shared anymore">
+          Its author may have made it private again.
+        </EmptyState>
+      ) : failed ? (
+        <EmptyState emoji="☁️" title="We couldn’t open this thought">
+          Check your connection and try again.
+        </EmptyState>
+      ) : !shown ? (
+        <ReaderSkeleton />
+      ) : (
+        <div>
+          {(shown.category_name || shown.mood) && (
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              {shown.category_name && shown.category_color && (
+                <Chip color={shown.category_color} emoji={shown.category_emoji ?? undefined}>
+                  {shown.category_name}
+                </Chip>
+              )}
+              {shown.mood && (
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-sage-50 px-2 text-[0.8rem] text-muted">
+                  {shown.mood} {MOODS.find((m) => m.emoji === shown.mood)?.label}
+                </span>
+              )}
+            </div>
+          )}
+          {entry ? (
+            <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
+              <FormattedText text={entry.content} />
+            </p>
+          ) : (
+            <div>
+              <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
+                <FormattedText text={preview?.excerpt ?? ""} />
               </p>
-            ) : (
-              <div>
-                <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
-                  <FormattedText text={preview?.excerpt ?? ""} />
-                </p>
-                <Skeleton className="mt-3 h-4 w-2/3" />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              <Skeleton className="mt-3 h-4 w-2/3" />
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-8 flex items-center gap-2 border-t border-line bg-surface px-6 pt-5 pb-6 sm:-mx-7 sm:-mb-7 sm:px-7 sm:pb-7">
+      <div ref={nav} className="mt-8 flex items-center gap-2 border-t border-line pt-5">
         <IconButton label="Previous thought" onClick={onPrevious} disabled={!onPrevious}>
           <ArrowLeftIcon size={18} />
         </IconButton>

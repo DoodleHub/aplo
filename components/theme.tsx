@@ -87,7 +87,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
             title={label}
             onClick={() => setPreference(value)}
             className={cn(
-              "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs transition-colors duration-200",
+              "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs transition-colors duration-200",
               active ? "bg-surface font-medium text-ink shadow-soft" : "text-muted hover:text-ink",
             )}
           >
