@@ -172,7 +172,7 @@ export function Footer() {
   return (
     <p className="mt-14 flex items-center justify-center gap-2 text-sm text-muted">
       <FlowerIcon size={14} className="text-ink-soft" />
-      A safe place for your wonderfully messy mind.
+      A safe place to help declutter your mind.
     </p>
   );
 }

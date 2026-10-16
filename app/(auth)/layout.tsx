@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         </div>
         <p className="flex items-center gap-2 text-sm text-muted">
           <FlowerIcon size={14} className="text-ink-soft" />
-          A safe place for your wonderfully messy mind.
+          A safe place to help declutter your mind.
         </p>
       </aside>
       <main className="flex flex-col px-5 py-8 sm:px-10">
