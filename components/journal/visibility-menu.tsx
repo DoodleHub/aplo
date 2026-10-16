@@ -3,10 +3,10 @@
 import { cn } from "@/lib/cn";
 import { isShared, type Category, type Visibility } from "@/lib/types";
 import { Menu } from "@/components/ui/menu";
-import { ChevronDownIcon, FolderIcon, GlobeIcon, LockIcon } from "@/components/icons";
+import { ChevronDownIcon, GlobeIcon, LockIcon } from "@/components/icons";
 import { useJournal } from "./store";
 
-/** Who can read an entry: its corner's choice, everyone, or only its author. */
+/** Who can read an entry: everyone, or only its author. Untouched entries follow their corner until one is picked. */
 export function VisibilityMenu({
   visibility,
   category,
@@ -23,26 +23,17 @@ export function VisibilityMenu({
     <Menu
       items={[
         {
-          label: "Same as corner",
-          description: category
-            ? `${category.is_public ? "Shared" : "Private"}, like ${category.emoji} ${category.name}`
-            : "Private until it’s in a shared corner",
-          icon: <FolderIcon size={17} />,
-          selected: visibility === "inherit",
-          onSelect: () => onChange("inherit"),
-        },
-        {
           label: "Shared in Discover",
           description: `Anyone on aplo can read it, as ${profile.emoji} ${profile.display_name}`,
           icon: <GlobeIcon size={17} />,
-          selected: visibility === "public",
+          selected: shared,
           onSelect: () => onChange("public"),
         },
         {
           label: "Only me",
           description: "Stays in your journal, even in a shared corner",
           icon: <LockIcon size={17} />,
-          selected: visibility === "private",
+          selected: !shared,
           onSelect: () => onChange("private"),
         },
       ]}
