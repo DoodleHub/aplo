@@ -20,7 +20,7 @@ import {
   SunIcon,
   TrashIcon,
 } from "@/components/icons";
-import { CategoryCard } from "@/components/journal/category-card";
+import { CategoryCard, CategoryRow } from "@/components/journal/category-card";
 import { EntryCard } from "@/components/journal/entry-card";
 import { EmptyState } from "@/components/journal/entry-grid";
 import { HeroPrompt } from "@/components/journal/hero-prompt";
@@ -297,10 +297,12 @@ export default function DesignSystemPage() {
 
       <Section title="Composites">
         <HeroPrompt />
-        <div className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-          {sampleCategories.map((c, i) => (
-            <CategoryCard key={c.id} category={c} count={i === 3 ? 0 : 1} />
-          ))}
+        <div className="mt-6">
+          <CategoryRow>
+            {sampleCategories.map((c, i) => (
+              <CategoryCard key={c.id} category={c} count={i === 3 ? 0 : 1} />
+            ))}
+          </CategoryRow>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {sampleEntries.map((e) => (

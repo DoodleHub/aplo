@@ -3,51 +3,47 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { palette } from "@/lib/palette";
 import type { Category } from "@/lib/types";
-import { ArrowUpRightIcon } from "@/components/icons";
 
+/** Compact, pill-like tile linking to a category. */
 export function CategoryCard({
   category,
   count,
   style,
-  actions,
+  className,
 }: {
   category: Category;
   count: number;
   style?: CSSProperties;
-  /** Optional controls (e.g. an Edit/Delete menu) pinned to the top-right corner. */
-  actions?: ReactNode;
+  className?: string;
 }) {
   return (
-    <div
+    <Link
+      href={`/c/${category.id}`}
       style={style}
       className={cn(
-        "group relative animate-fade-up rounded-2xl border transition-[transform,box-shadow] duration-300 ease-soft hover:-translate-y-1 hover:shadow-lift has-[[aria-expanded=true]]:-translate-y-1 has-[[aria-expanded=true]]:shadow-lift",
+        "group flex h-14 max-w-60 shrink-0 animate-fade-up snap-start items-center gap-3 rounded-2xl border py-2 pr-4 pl-2 transition-[transform,box-shadow] duration-300 ease-soft hover:-translate-y-0.5 hover:shadow-lift active:scale-[0.98]",
         palette[category.color].card,
+        className,
       )}
     >
-      <Link
-        href={`/c/${category.id}`}
-        className="flex min-h-[8.75rem] flex-col justify-between rounded-[inherit] p-5"
-      >
-        <span className="text-[1.6rem] leading-none">{category.emoji}</span>
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-[1.05rem] font-semibold text-ink">{category.name}</h3>
-            <p className="mt-1 text-[0.82rem] text-muted">
-              {count} {count === 1 ? "thought" : "thoughts"} tucked away
-            </p>
-          </div>
-          <ArrowUpRightIcon
-            size={18}
-            className="mb-0.5 shrink-0 text-ink-soft transition-transform duration-300 ease-soft group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-          />
-        </div>
-      </Link>
-      {actions && (
-        <div className="absolute top-3 right-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 has-[[aria-expanded=true]]:opacity-100 pointer-coarse:opacity-100">
-          {actions}
-        </div>
-      )}
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/60 text-[1.25rem] leading-none transition-transform duration-300 ease-soft group-hover:scale-110 group-hover:-rotate-6">
+        {category.emoji}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[0.95rem] leading-tight font-semibold text-ink">{category.name}</span>
+        <span className="mt-0.5 block text-xs text-muted tabular-nums">
+          {count} {count === 1 ? "thought" : "thoughts"}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+/** Row of category tiles: swipeable on small screens, wrapping on larger ones. */
+export function CategoryRow({ children }: { children: ReactNode }) {
+  return (
+    <div className="-mx-4 -my-1 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 py-1 scrollbar-none mask-[linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:mask-none">
+      {children}
     </div>
   );
 }

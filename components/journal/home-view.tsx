@@ -6,8 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { FlowerIcon, HeartIcon, PlusIcon, SunIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
-import { CategoryMenu } from "./category-actions";
-import { CategoryCard } from "./category-card";
+import { CategoryCard, CategoryRow } from "./category-card";
 import { EmptyState, EntryGrid } from "./entry-grid";
 import { HeroPrompt } from "./hero-prompt";
 import { SectionHeader } from "./section-header";
@@ -39,6 +38,7 @@ export function HomeView() {
       <section className="mt-12">
         <SectionHeader
           title="Your little corners"
+          count={categories.length || undefined}
           action={
             <button
               type="button"
@@ -51,19 +51,16 @@ export function HomeView() {
           }
         />
         {categories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <CategoryRow>
             {categories.map((category, i) => (
               <CategoryCard
                 key={category.id}
                 category={category}
                 count={countByCategory.get(category.id) ?? 0}
-                style={{ animationDelay: `${100 + i * 50}ms` }}
-                actions={
-                  <CategoryMenu category={category} iconSize={18} triggerClassName="text-ink-soft hover:bg-surface/60" />
-                }
+                style={{ animationDelay: `${80 + i * 35}ms` }}
               />
             ))}
-          </div>
+          </CategoryRow>
         ) : (
           <EmptyState emoji="🏡" title="No corners yet" action={<CreateCornerButton />}>
             Corners help you gather similar thoughts together.
@@ -71,7 +68,7 @@ export function HomeView() {
         )}
       </section>
 
-      <section className="mt-12">
+      <section className="mt-10">
         <SectionHeader
           title="Recent thoughts"
           count={visible.length}
