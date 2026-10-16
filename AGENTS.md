@@ -124,7 +124,12 @@ The remote migration history (`supabase_migrations.schema_migrations`) must alwa
   - keyboard support (Esc, arrows in radio groups, ⌘ shortcuts)
   - `aria-*` labels on icon buttons
   - `ease-soft` / `ease-spring` motion that's disabled under reduced motion
-  - mobile-first layouts
+  - mobile-first layouts that work from 320px wide up. Nothing may make the page scroll sideways. Before calling UI work done:
+    - Add up the widths of every row of controls at 320px and 375px, counting the 16px side gutters. Count the worst case too: every button shown, status text visible, long names.
+    - Rows that can grow (toolbars, chip lists) need a plan for narrow screens: icon-only below `sm`, wrapping, horizontal scroll inside the row (`overflow-x-auto` with `min-w-0`), or moving extras into a menu.
+    - Give long text (`truncate`, `wrap-break-word`) and flex children (`min-w-0`) a way to shrink.
+    - Keep tap targets at least 36px.
+    - When you can, check it in the browser at 320, 375 and 768px.
 - **Copy:** warm, brief, second person, curly quotes and apostrophes (’ “ ”). Errors are kind and say what to do next. No streaks, scores or guilt.
 - **Privacy:** everything is private by default. Never expose emails, favorites or the names of private corners.
 - **Style:** match the surrounding code. Comments explain *why*, briefly; JSDoc sits on exported helpers and props whose meaning isn't obvious.

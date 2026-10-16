@@ -301,16 +301,16 @@ export function Editor({
 
   return (
     <div className="mx-auto max-w-3xl animate-fade-up">
-      <div className="mb-5 flex items-center gap-2">
+      <div className="mb-5 flex items-center gap-1 sm:gap-2">
         <Link
           href={backHref}
-          className="-ml-2 inline-flex h-10 items-center gap-2 rounded-xl px-3 text-[0.95rem] text-muted transition-colors hover:bg-sage-100 hover:text-ink"
+          className="-ml-2 inline-flex h-10 items-center gap-2 rounded-xl px-2 text-[0.95rem] text-muted transition-colors hover:bg-sage-100 hover:text-ink sm:px-3"
         >
           <ArrowLeftIcon size={18} />
           <span className="max-sm:sr-only">Back</span>
         </Link>
         <SaveStatus status={status} />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center sm:gap-1">
           <PageStyleMenu />
           <TemplateMenu
             onApply={applyTemplate}
@@ -327,7 +327,7 @@ export function Editor({
             label={draft.is_favorite ? "Remove from favorites" : "Add to favorites"}
             aria-pressed={draft.is_favorite}
             onClick={() => change({ is_favorite: !draft.is_favorite }, true)}
-            className={cn("h-10 w-10", draft.is_favorite && "text-heart hover:text-heart")}
+            className={cn("h-10 w-9 sm:w-10", draft.is_favorite && "text-heart hover:text-heart")}
           >
             <HeartIcon
               key={String(draft.is_favorite)}
@@ -352,13 +352,13 @@ export function Editor({
                 },
               ]}
               trigger={(props) => (
-                <IconButton label="More options" className="h-10 w-10" {...props}>
+                <IconButton label="More options" className="h-10 w-9 sm:w-10" {...props}>
                   <MoreIcon size={20} />
                 </IconButton>
               )}
             />
           ) : null}
-          <Button size="sm" className="ml-2 h-10 rounded-xl px-4" onClick={finish}>
+          <Button size="sm" className="ml-1 h-10 rounded-xl sm:ml-2 sm:px-4" onClick={finish}>
             Done
           </Button>
         </div>
@@ -527,7 +527,12 @@ function SaveStatus({ status }: { status: Status }) {
           <span className="max-sm:sr-only">Saved</span>
         </>
       )}
-      {status === "error" && "Not saved — we’ll retry as you type"}
+      {status === "error" && (
+        <>
+          <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+          <span className="max-sm:sr-only">Not saved — we’ll retry as you type</span>
+        </>
+      )}
     </span>
   );
 }

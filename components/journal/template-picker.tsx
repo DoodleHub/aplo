@@ -185,7 +185,7 @@ export function TemplateMenu({
           aria-label="Templates"
           title="Templates"
           className={cn(
-            "inline-flex h-10 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-sage-100 hover:text-ink sm:pr-3",
+            "inline-flex h-10 items-center gap-2 rounded-xl px-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-sage-100 hover:text-ink sm:px-2.5 sm:pr-3",
             props["aria-expanded"] && "bg-sage-100 text-ink",
           )}
         >

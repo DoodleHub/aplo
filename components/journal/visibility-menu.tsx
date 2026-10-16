@@ -52,7 +52,7 @@ export function VisibilityMenu({
           {...props}
           aria-label={`Visibility: ${shared ? "shared in Discover" : "private"}`}
           className={cn(
-            "inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium transition-colors duration-200",
+            "inline-flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium transition-colors duration-200 sm:px-3",
             shared ? "bg-sage-100 text-sage-600 hover:bg-sage-200" : "text-muted hover:bg-sage-100 hover:text-ink",
           )}
         >
@@ -60,7 +60,7 @@ export function VisibilityMenu({
             {shared ? <GlobeIcon size={17} /> : <LockIcon size={17} />}
           </span>
           <span className="hidden sm:inline">{shared ? "Shared" : "Private"}</span>
-          <ChevronDownIcon size={14} className="opacity-60" />
+          <ChevronDownIcon size={14} className="opacity-60 max-sm:hidden" />
         </button>
       )}
     />
