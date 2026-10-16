@@ -222,26 +222,22 @@ export function Editor({
   const hasBlanks = nextBlank(draft.content) !== -1;
 
   /**
-   * Puts a template on the page. A blank (or untouched) page is replaced, so trying a few
-   * is free; anything already written is kept, with the template added below and an undo.
+   * Puts a template on the page, replacing the title and body. Trying a few on a blank page
+   * is free; if it replaces real writing, there's an undo.
    */
   const applyTemplate = (template: Template) => {
-    const filled = fillTemplate(template, timeZone, createdAt);
+    const { title, content } = fillTemplate(template, timeZone, createdAt);
     const previous = { title: draft.title, content: draft.content };
     const previousScaffold = scaffold;
-    const replace = bodyUntouched;
-    const kept = draft.content.trimEnd();
-    const content = replace ? filled.content : filled.content.trim() ? `${kept}\n\n${filled.content}` : draft.content;
-    const title = titleUntouched ? filled.title : draft.title;
 
-    setScaffold({ id: template.id, title: titleUntouched ? title : null, content: replace ? content : null });
+    setScaffold({ id: template.id, title, content });
     setPreview(null);
-    const blank = nextBlank(content, replace ? -1 : kept.length);
+    const blank = nextBlank(content);
     pendingCaret.current = blank === -1 ? content.length : blank;
     change({ title, content });
 
-    if (!replace) {
-      toast.show(`Added “${template.name}” below.`, {
+    if (!bodyUntouched || !titleUntouched) {
+      toast.show(`Replaced with “${template.name}”.`, {
         label: "Undo",
         onClick: () => {
           setScaffold(previousScaffold);

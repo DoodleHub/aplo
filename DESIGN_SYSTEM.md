@@ -122,7 +122,7 @@ Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pe
 
 ## Templates
 
-A template is a starting title and a body of prompts. Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template on an untouched page replaces it; on a page with writing, it's added below with Undo. A page holding only an untouched template is never saved as an entry.
+A template is a starting title and a body of prompts. Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template replaces the page’s title and body; if that replaces real writing, a toast offers Undo. A page holding only an untouched template is never saved as an entry.
 
 ## Voice
 

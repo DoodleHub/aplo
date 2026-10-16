@@ -185,11 +185,12 @@ export function TemplateMenu({
           aria-label="Templates"
           title="Templates"
           className={cn(
-            "inline-flex h-10 w-10 items-center justify-center rounded-xl text-muted transition-colors duration-200 hover:bg-sage-100 hover:text-ink",
+            "inline-flex h-10 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-sage-100 hover:text-ink sm:pr-3",
             props["aria-expanded"] && "bg-sage-100 text-ink",
           )}
         >
           <TemplateIcon size={20} />
+          <span className="hidden sm:inline">Templates</span>
         </button>
       )}
     >

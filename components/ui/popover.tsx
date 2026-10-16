@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
 const GAP = 8;
+/** Matches the 16px mobile gutter. */
+const EDGE = 16;
 
 export type PopoverTriggerProps = {
   onClick: () => void;
@@ -46,12 +48,16 @@ export function Popover({
   const close = () => setOpen(false);
 
   useLayoutEffect(() => {
-    if (!open || !anchorRef.current) return;
+    if (!open || !anchorRef.current || !panelRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
+    const width = panelRef.current.offsetWidth;
     const placeBelow = side === "bottom" ? rect.bottom + room < window.innerHeight : rect.top < room;
+    // Keep the panel on screen: a trigger mid-toolbar on a phone would otherwise push it off the edge.
+    const ideal = align === "end" ? rect.right - width : rect.left;
+    const left = Math.max(EDGE, Math.min(ideal, window.innerWidth - EDGE - width));
     setPosition({
       ...(placeBelow ? { top: rect.bottom + GAP } : { bottom: window.innerHeight - rect.top + GAP }),
-      ...(align === "end" ? { right: window.innerWidth - rect.right } : { left: rect.left }),
+      left,
     });
   }, [open, side, align, room]);
 
@@ -81,13 +87,13 @@ export function Popover({
     <div ref={anchorRef} className={className}>
       {trigger({ onClick: () => setOpen((o) => !o), "aria-expanded": open, "aria-haspopup": role })}
       {open &&
-        position &&
         createPortal(
           <div
             ref={panelRef}
             role={role}
             aria-label={label}
-            style={position}
+            // Rendered hidden first so its width can be measured before it's placed.
+            style={position ?? { top: 0, left: 0, visibility: "hidden" }}
             className={cn(
               "fixed z-60 animate-pop-in rounded-2xl border border-line bg-surface p-1.5 shadow-pop",
               panelClassName,

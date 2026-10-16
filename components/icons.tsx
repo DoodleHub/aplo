@@ -198,9 +198,8 @@ export const PaperIcon = (p: IconProps) => (
 /** A stack of pages: templates. */
 export const TemplateIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="7.5" y="7.5" width="12.5" height="12.5" rx="2.5" />
-    <path d="M4 15.5v-9A2.5 2.5 0 0 1 6.5 4h9" />
-    <path d="M11 12h5.5M11 15.5H15" />
+    <rect x="4" y="4" width="16" height="16" rx="2.5" />
+    <path d="M4 9.5h16M10 9.5V20" />
   </Icon>
 );
 
