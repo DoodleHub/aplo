@@ -34,6 +34,18 @@ type ProfileRow = {
   created_at: string;
 };
 
+type TemplateRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type Insert<Row, Required extends keyof Row> = Pick<Row, Required> & Partial<Omit<Row, Required>>;
 
 export type Database = {
@@ -49,6 +61,12 @@ export type Database = {
         Row: EntryRow;
         Insert: Insert<EntryRow, never>;
         Update: Partial<EntryRow>;
+        Relationships: [];
+      };
+      templates: {
+        Row: TemplateRow;
+        Insert: Insert<TemplateRow, "name">;
+        Update: Partial<TemplateRow>;
         Relationships: [];
       };
       profiles: {

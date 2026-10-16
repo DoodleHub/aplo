@@ -194,3 +194,19 @@ export const PaperIcon = (p: IconProps) => (
     <path d="M8.5 12.5c1-.9 1.8-.9 2.6 0s1.7.9 2.6 0 1.5-.7 1.8-.4M8.5 16.5h4.5" strokeWidth={1.3} />
   </Icon>
 );
+
+/** A stack of pages: templates. */
+export const TemplateIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="7.5" y="7.5" width="12.5" height="12.5" rx="2.5" />
+    <path d="M4 15.5v-9A2.5 2.5 0 0 1 6.5 4h9" />
+    <path d="M11 12h5.5M11 15.5H15" />
+  </Icon>
+);
+
+export const CopyIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="8" y="8" width="12" height="12" rx="2.5" />
+    <path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8" />
+  </Icon>
+);

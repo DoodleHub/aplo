@@ -4,11 +4,17 @@ import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { EyeIcon } from "@/components/icons";
 
-export const inputStyles =
-  "h-12 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink shadow-soft lg:text-[0.95rem] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-faint hover:border-line-strong focus:border-sage-400 focus:ring-4 focus:ring-sage-200/70 aria-invalid:border-danger/60 aria-invalid:focus:ring-danger-soft";
+const boxStyles =
+  "w-full rounded-xl border border-line bg-surface px-4 text-base text-ink shadow-soft lg:text-[0.95rem] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-faint hover:border-line-strong focus:border-sage-400 focus:ring-4 focus:ring-sage-200/70 aria-invalid:border-danger/60 aria-invalid:focus:ring-danger-soft";
+
+export const inputStyles = cn("h-12", boxStyles);
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cn(inputStyles, className)} {...props} />;
+}
+
+export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
+  return <textarea className={cn(boxStyles, "block resize-y py-3 leading-relaxed", className)} {...props} />;
 }
 
 export function Field({

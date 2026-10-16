@@ -4,9 +4,9 @@
  * Everything here is best-effort — if IndexedDB is unavailable (e.g. some private
  * windows), reads come back empty and writes are skipped.
  */
-import type { Category, Entry } from "@/lib/types";
+import type { Category, Entry, Template } from "@/lib/types";
 
-export type Table = "entries" | "categories" | "profiles";
+export type Table = "entries" | "categories" | "profiles" | "templates";
 
 export type WriteOp = { opId: string; userId: string; table: Table } & (
   | { kind: "upsert"; row: Record<string, unknown> & { id: string } }
@@ -20,6 +20,8 @@ export type Snapshot = {
   basedOn: string;
   categories: Category[];
   entries: Entry[];
+  /** Missing from snapshots saved before templates existed. */
+  templates?: Template[];
 };
 
 const DB_NAME = "aplo";
@@ -129,15 +131,17 @@ export async function clearDeviceCopy(userId: string) {
 
 /** Applies queued writes on top of server data, so unsynced changes show after a reload. */
 export function applyOps(
-  data: { categories: Category[]; entries: Entry[] },
+  data: { categories: Category[]; entries: Entry[]; templates: Template[] },
   ops: WriteOp[],
-): { categories: Category[]; entries: Entry[] } {
-  let { categories, entries } = data;
+): { categories: Category[]; entries: Entry[]; templates: Template[] } {
+  let { categories, entries, templates } = data;
   for (const op of ops) {
     if (op.table === "profiles") {
       continue;
     } else if (op.table === "entries") {
       entries = applyOp(entries, op);
+    } else if (op.table === "templates") {
+      templates = applyOp(templates, op);
     } else {
       categories = applyOp(categories, op);
       if (op.kind === "delete") {
@@ -145,7 +149,7 @@ export function applyOps(
       }
     }
   }
-  return { categories, entries };
+  return { categories, entries, templates };
 }
 
 function applyOp<T extends { id: string }>(rows: T[], op: WriteOp): T[] {

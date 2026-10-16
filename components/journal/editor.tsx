@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 import { fullDateTime, wordCount } from "@/lib/format";
 import { bodyLeading, papers, pens } from "@/lib/page-style";
 import { MOODS, palette } from "@/lib/palette";
-import { isShared, type Entry, type Visibility } from "@/lib/types";
+import { fillTemplate, nextBlank } from "@/lib/templates";
+import { isShared, type Entry, type Template, type Visibility } from "@/lib/types";
 import { Button, IconButton } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
 import { ArrowLeftIcon, CheckIcon, HeartIcon, MoreIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
 import { PageStyleMenu } from "./page-style-menu";
+import { TemplateMenu, TemplateStrip } from "./template-picker";
 import { useJournal } from "./store";
 import { VisibilityMenu } from "./visibility-menu";
 
@@ -31,6 +33,8 @@ const SAVE_DELAY = 600;
 
 type Draft = Pick<Entry, "title" | "content" | "mood" | "category_id" | "is_favorite" | "visibility">;
 type Status = "idle" | "saving" | "saved" | "error";
+/** What a template put on the page, so we can tell whether the writer has made it their own. */
+type Scaffold = { id: string; title: string | null; content: string | null };
 
 export function Editor({
   id,
@@ -44,7 +48,7 @@ export function Editor({
 }) {
   const router = useRouter();
   const { categories, categoryById, profile, createEntry, updateEntry, deleteEntry, timeZone } = useJournal();
-  const { openCategoryDialog, openProfileDialog } = useShell();
+  const { openCategoryDialog, openProfileDialog, openTemplates } = useShell();
   const toast = useToast();
 
   const [draft, setDraft] = useState<Draft>(() => ({
@@ -66,14 +70,30 @@ export function Editor({
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
+  const [scaffold, setScaffoldState] = useState<Scaffold | null>(null);
+  const scaffoldRef = useRef<Scaffold | null>(null);
+  const setScaffold = (next: Scaffold | null) => {
+    scaffoldRef.current = next;
+    setScaffoldState(next);
+  };
+  const [preview, setPreview] = useState<Template | null>(null);
+  // Where to put the cursor once a template's text is on the page.
+  const pendingCaret = useRef<number | null>(null);
+
+  /** Nothing written yet: only what a template put there, if anything. */
+  const isBlank = useCallback((d: Draft) => {
+    const s = scaffoldRef.current;
+    return (!d.title.trim() || d.title === s?.title) && (!d.content.trim() || d.content === s?.content);
+  }, []);
+
   const save = useCallback(async () => {
     clearTimeout(timer.current);
     if (!dirty.current) return;
     const current = latest.current;
 
     if (!persisted.current) {
-      // Don't create empty entries just because a mood or corner was picked.
-      if (!current.title.trim() && !current.content.trim()) return;
+      // Don't create empty entries just because a mood, corner or template was picked.
+      if (isBlank(current)) return;
       dirty.current = false;
       persisted.current = true;
       setStatus("saving");
@@ -96,7 +116,7 @@ export function Editor({
       }
     }
     if (!dirty.current) setStatus("saved");
-  }, [id, createdAt, createEntry, updateEntry]);
+  }, [id, createdAt, createEntry, updateEntry, isBlank]);
 
   const change = (patch: Partial<Draft>, immediate = false) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -132,14 +152,14 @@ export function Editor({
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirty.current) {
+      if (dirty.current && (persisted.current || !isBlank(latest.current))) {
         save();
         e.preventDefault();
       }
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [save]);
+  }, [save, isBlank]);
 
   const { paper, pen } = profile;
 
@@ -152,6 +172,14 @@ export function Editor({
     }
   }, []);
   useLayoutEffect(fit, [fit, draft.title, draft.content, paper, pen]);
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    const caret = pendingCaret.current;
+    if (!el || caret === null) return;
+    pendingCaret.current = null;
+    el.focus();
+    el.setSelectionRange(caret, caret);
+  }, [draft.content]);
   useEffect(() => {
     document.fonts?.addEventListener("loadingdone", fit);
     return () => document.fonts?.removeEventListener("loadingdone", fit);
@@ -187,6 +215,94 @@ export function Editor({
   const words = wordCount(draft.content);
   const prompt = PROMPTS[id.charCodeAt(0) % PROMPTS.length];
 
+  const bodyUntouched = !draft.content.trim() || draft.content === scaffold?.content;
+  const titleUntouched = !draft.title.trim() || draft.title === scaffold?.title;
+  const activeTemplate = scaffold && draft.content === scaffold.content ? scaffold.id : null;
+  const previewed = preview && !draft.content ? fillTemplate(preview, timeZone, createdAt) : null;
+  const hasBlanks = nextBlank(draft.content) !== -1;
+
+  /**
+   * Puts a template on the page. A blank (or untouched) page is replaced, so trying a few
+   * is free; anything already written is kept, with the template added below and an undo.
+   */
+  const applyTemplate = (template: Template) => {
+    const filled = fillTemplate(template, timeZone, createdAt);
+    const previous = { title: draft.title, content: draft.content };
+    const previousScaffold = scaffold;
+    const replace = bodyUntouched;
+    const kept = draft.content.trimEnd();
+    const content = replace ? filled.content : filled.content.trim() ? `${kept}\n\n${filled.content}` : draft.content;
+    const title = titleUntouched ? filled.title : draft.title;
+
+    setScaffold({ id: template.id, title: titleUntouched ? title : null, content: replace ? content : null });
+    setPreview(null);
+    const blank = nextBlank(content, replace ? -1 : kept.length);
+    pendingCaret.current = blank === -1 ? content.length : blank;
+    change({ title, content });
+
+    if (!replace) {
+      toast.show(`Added “${template.name}” below.`, {
+        label: "Undo",
+        onClick: () => {
+          setScaffold(previousScaffold);
+          change(previous);
+        },
+      });
+    }
+  };
+  // Dialog callbacks outlive this render; they should apply to the page as it is then.
+  const applyRef = useRef(applyTemplate);
+  useEffect(() => {
+    applyRef.current = applyTemplate;
+  });
+
+  const clearTemplate = () => {
+    setScaffold(null);
+    pendingCaret.current = 0;
+    change({ title: titleUntouched ? "" : draft.title, content: "" });
+  };
+
+  const createTemplate = () =>
+    openTemplates({ view: "form" }, (template) => applyRef.current(template));
+
+  const saveAsTemplate = () =>
+    openTemplates({ view: "form", seed: { name: draft.title.slice(0, 40), content: draft.content } }, () =>
+      toast.show("Saved as a template. It’s waiting on every blank page."),
+    );
+
+  /** Tab hops between a template's blanks; Enter keeps a list going. */
+  const onBodyKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.nativeEvent.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = e.currentTarget;
+    const { selectionStart: start, selectionEnd: end, value } = el;
+
+    if (e.key === "Tab" && !e.shiftKey) {
+      const next = nextBlank(value, end);
+      if (next === -1) return;
+      e.preventDefault();
+      el.setSelectionRange(next, next);
+      return;
+    }
+
+    if (e.key === "Enter" && !e.shiftKey && start === end) {
+      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+      const lineEnd = value.indexOf("\n", start);
+      const item = /^(\s*)([-*•]|\d+[.)]|\[[ x]\])(\s+)(.*)$/.exec(value.slice(lineStart, start));
+      if (!item) return;
+      e.preventDefault();
+      const [, indent, marker, , text] = item;
+      if (!text.trim() && !value.slice(start, lineEnd === -1 ? undefined : lineEnd).trim()) {
+        // Enter on an empty item ends the list, as in most editors.
+        el.setSelectionRange(lineStart, start);
+        typeText(el, "");
+        return;
+      }
+      const number = /^\d+/.exec(marker)?.[0];
+      const nextMarker = number ? `${Number(number) + 1}${marker.slice(number.length)}` : marker === "[x]" ? "[ ]" : marker;
+      typeText(el, `\n${indent}${nextMarker} `);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-3xl animate-fade-up">
       <div className="mb-5 flex items-center gap-2">
@@ -200,6 +316,12 @@ export function Editor({
         <SaveStatus status={status} />
         <div className="ml-auto flex items-center gap-1">
           <PageStyleMenu />
+          <TemplateMenu
+            onApply={applyTemplate}
+            onSaveAsTemplate={saveAsTemplate}
+            onManage={() => openTemplates()}
+            canSave={Boolean(draft.content.trim())}
+          />
           <VisibilityMenu
             visibility={draft.visibility}
             category={corner}
@@ -295,7 +417,7 @@ export function Editor({
             }
           }}
           maxLength={200}
-          placeholder="Give it a little title"
+          placeholder={previewed?.title || "Give it a little title"}
           aria-label="Title"
           className={cn(
             "mt-6 block w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
@@ -306,11 +428,22 @@ export function Editor({
           {fullDateTime(createdAt, timeZone)}
         </p>
 
+        <TemplateStrip
+          show={bodyUntouched}
+          activeId={activeTemplate}
+          onApply={applyTemplate}
+          onClear={clearTemplate}
+          onPreview={setPreview}
+          onCreate={createTemplate}
+          onManage={() => openTemplates()}
+        />
+
         <textarea
           ref={contentRef}
           value={draft.content}
           onChange={(e) => change({ content: e.target.value })}
-          placeholder={prompt}
+          onKeyDown={onBodyKeyDown}
+          placeholder={previewed?.content || prompt}
           aria-label="Your thoughts"
           className={cn(
             "mt-6 block min-h-[38vh] w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
@@ -354,11 +487,25 @@ export function Editor({
       </article>
 
       <p className="mt-4 hidden text-center text-xs text-faint sm:block">
+        {hasBlanks && (
+          <>
+            <kbd className="font-sans">Tab</kbd> jumps to the next prompt ·{" "}
+          </>
+        )}
         Saves as you write · <kbd className="font-sans">⌘</kbd> + <kbd className="font-sans">Enter</kbd> when
         you’re done
       </p>
     </div>
   );
+}
+
+/** Types into a field through the browser's own editing, so ⌘Z still undoes it. */
+function typeText(el: HTMLTextAreaElement, text: string) {
+  el.focus();
+  const done = text ? document.execCommand("insertText", false, text) : document.execCommand("delete");
+  if (done) return;
+  el.setRangeText(text, el.selectionStart, el.selectionEnd, "end");
+  el.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function SaveStatus({ status }: { status: Status }) {

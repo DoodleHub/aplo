@@ -110,12 +110,19 @@ Pens: Clean (DM Sans), Breezy (Caveat), Neat (Patrick Hand) and Felt tip (Kalam)
 | Toast | `ui/toast.tsx` | Bottom pill with an optional action, such as Undo |
 | Skeleton | `ui/skeleton.tsx` | Loading placeholders |
 | EntryCard, CategoryCard, HeroPrompt, EmptyState | `journal/*` | Composites from the mock |
+| TemplateStrip, TemplateMenu | `journal/template-picker.tsx` | "Start with" chips on a blank page (hover previews as ghost text) and the toolbar menu |
+| TemplateDialog | `journal/template-dialog.tsx` | List, create and edit templates, with a live preview in the person's paper and pen |
+| Textarea | `ui/field.tsx` | Multi-line input matching `Input` |
 | VisibilityMenu, Avatar | `journal/visibility-menu.tsx`, `journal/profile-dialog.tsx` | Sharing control and the pen-name avatar |
 
 ## Sharing
 
 Everything is private by default. A corner can be shared; each entry is "Same as corner", "Shared" or "Only me" (`isShared` in `lib/types.ts`).
 Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pen name and emoji, never by email. Discover reads go through the `discover_feed` / `discover_entry` RPCs, which hide the names of private corners.
+
+## Templates
+
+A template is a starting title and a body of prompts. Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template on an untouched page replaces it; on a page with writing, it's added below with Undo. A page holding only an untouched template is never saved as an entry.
 
 ## Voice
 

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { createContext, use, useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import type { Category } from "@/lib/types";
+import type { Category, Template } from "@/lib/types";
 import { CloseIcon } from "@/components/icons";
 import { IconButton } from "@/components/ui/button";
 import { DeleteCategoryDialog } from "./category-actions";
@@ -11,12 +11,15 @@ import { CategoryDialog } from "./category-dialog";
 import { OfflineBanner } from "./offline-banner";
 import { ProfileDialog } from "./profile-dialog";
 import { Sidebar } from "./sidebar";
+import { TemplateDialog, type TemplateDialogStart } from "./template-dialog";
 import { Topbar } from "./topbar";
 
 type ShellApi = {
   openCategoryDialog: (category?: Category) => void;
   confirmDeleteCategory: (category: Category) => void;
   openProfileDialog: () => void;
+  /** Opens the template list, or a template form; `onSaved` hears about what was saved. */
+  openTemplates: (start?: TemplateDialogStart, onSaved?: (template: Template) => void) => void;
 };
 
 const ShellContext = createContext<ShellApi | null>(null);
@@ -27,6 +30,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [dialog, setDialog] = useState<{ open: boolean; category?: Category }>({ open: false });
   const [deleting, setDeleting] = useState<Category>();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [templates, setTemplates] = useState<{
+    open: boolean;
+    start: TemplateDialogStart;
+    onSaved?: (template: Template) => void;
+  }>({ open: false, start: { view: "list" } });
 
   // Close the mobile drawer whenever the route changes.
   const [lastPath, setLastPath] = useState(pathname);
@@ -54,6 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         setDrawerOpen(false);
         setProfileOpen(true);
       },
+      openTemplates: (start = { view: "list" }, onSaved) => setTemplates({ open: true, start, onSaved }),
     }),
     [],
   );
@@ -112,6 +121,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
       <DeleteCategoryDialog category={deleting} onClose={() => setDeleting(undefined)} />
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <TemplateDialog
+        open={templates.open}
+        start={templates.start}
+        onSaved={templates.onSaved}
+        onClose={() => setTemplates((t) => ({ ...t, open: false }))}
+      />
     </ShellContext>
   );
 }

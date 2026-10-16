@@ -11,6 +11,7 @@ export function Dialog({
   title,
   description,
   children,
+  size = "md",
   className,
 }: {
   open: boolean;
@@ -18,6 +19,8 @@ export function Dialog({
   title: string;
   description?: ReactNode;
   children: ReactNode;
+  /** `lg` fits a form beside a live preview. */
+  size?: "md" | "lg";
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -41,7 +44,8 @@ export function Dialog({
       }}
       aria-labelledby="dialog-title"
       className={cn(
-        "m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl border border-line bg-surface p-0 text-ink shadow-pop outline-none",
+        "m-auto w-[calc(100%-2rem)] rounded-3xl border border-line bg-surface p-0 text-ink shadow-pop outline-none",
+        size === "lg" ? "max-w-3xl" : "max-w-md",
         "backdrop:bg-[#2b322c]/25 backdrop:backdrop-blur-[3px] open:animate-pop-in open:backdrop:animate-fade-in",
         className,
       )}

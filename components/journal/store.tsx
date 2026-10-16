@@ -15,7 +15,16 @@ import { createClient } from "@/lib/supabase/client";
 import { applyOps, loadOutbox, loadSnapshot, saveSnapshot } from "@/lib/local-db";
 import { createSyncQueue } from "@/lib/sync";
 import { useToast } from "@/components/ui/toast";
-import type { Category, CategoryInput, Entry, EntryPatch, Profile, WritingStyle } from "@/lib/types";
+import type {
+  Category,
+  CategoryInput,
+  Entry,
+  EntryPatch,
+  Profile,
+  Template,
+  TemplateInput,
+  WritingStyle,
+} from "@/lib/types";
 
 export type JournalUser = { id: string; email: string };
 
@@ -28,6 +37,8 @@ type JournalApi = {
   now: string;
   categories: Category[];
   entries: Entry[];
+  /** The person's own templates, oldest first. Built-in ones live in lib/templates.ts. */
+  templates: Template[];
   /** Writes not yet confirmed by the server, e.g. made while offline. */
   pendingWrites: number;
   categoryById: Map<string, Category>;
@@ -39,6 +50,9 @@ type JournalApi = {
   updateEntry: (id: string, patch: EntryPatch) => Promise<boolean>;
   toggleFavorite: (id: string) => void;
   deleteEntry: (id: string) => void;
+  createTemplate: (input: TemplateInput) => Template;
+  updateTemplate: (id: string, input: Partial<TemplateInput>) => void;
+  deleteTemplate: (id: string) => void;
   updateProfile: (profile: Pick<Profile, "display_name" | "emoji">) => Promise<boolean>;
   /** Changes the paper or pen used for every thought. Works offline. */
   setWritingStyle: (patch: Partial<WritingStyle>) => void;
@@ -52,12 +66,14 @@ const noopSubscribe = () => () => {};
 const getLocalTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
 const byNewest = (a: Entry, b: Entry) => b.created_at.localeCompare(a.created_at);
+const byOldest = (a: Template, b: Template) => a.created_at.localeCompare(b.created_at);
 
 export function JournalProvider({
   user,
   initialProfile,
   initialCategories,
   initialEntries,
+  initialTemplates,
   initialTimeZone,
   now,
   children,
@@ -67,6 +83,7 @@ export function JournalProvider({
   now: string;
   initialCategories: Category[];
   initialEntries: Entry[];
+  initialTemplates: Template[];
   initialTimeZone: string;
   children: ReactNode;
 }) {
@@ -74,6 +91,7 @@ export function JournalProvider({
   const toast = useToast();
   const [categories, setCategories] = useState(initialCategories);
   const [entries, setEntries] = useState(initialEntries);
+  const [templates, setTemplates] = useState(initialTemplates);
   const [profile, setProfile] = useState(initialProfile);
   const timeZone = useSyncExternalStore(
     noopSubscribe,
@@ -98,10 +116,15 @@ export function JournalProvider({
         basedOn.current = snapshot.basedOn;
         setCategories(snapshot.categories);
         setEntries(snapshot.entries);
+        if (snapshot.templates) setTemplates(snapshot.templates);
       } else if (outbox.length) {
-        const local = applyOps({ categories: initialCategories, entries: initialEntries }, outbox);
+        const local = applyOps(
+          { categories: initialCategories, entries: initialEntries, templates: initialTemplates },
+          outbox,
+        );
         setCategories(local.categories);
         setEntries(local.entries.sort(byNewest));
+        setTemplates(local.templates.sort(byOldest));
       }
       // A paper or pen picked offline, still waiting to sync.
       const style = outbox.flatMap((op) => (op.table === "profiles" && op.kind === "update" ? [op.patch] : []));
@@ -112,17 +135,17 @@ export function JournalProvider({
     return () => {
       cancelled = true;
     };
-  }, [user.id, now, initialCategories, initialEntries, sync]);
+  }, [user.id, now, initialCategories, initialEntries, initialTemplates, sync]);
 
   // Keep a copy of the journal on this device so it can be read offline.
   useEffect(() => {
     if (!restored) return;
     const timer = setTimeout(
-      () => saveSnapshot({ userId: user.id, basedOn: basedOn.current, categories, entries }),
+      () => saveSnapshot({ userId: user.id, basedOn: basedOn.current, categories, entries, templates }),
       400,
     );
     return () => clearTimeout(timer);
-  }, [restored, user.id, categories, entries]);
+  }, [restored, user.id, categories, entries, templates]);
 
   // Dates render in the reader's timezone; remember it so the server can match next time.
   useEffect(() => {
@@ -299,6 +322,72 @@ export function JournalProvider({
     [entries, sync, fail, toast],
   );
 
+  const createTemplate = useCallback<JournalApi["createTemplate"]>(
+    (input) => {
+      const at = new Date().toISOString();
+      const template: Template = { id: crypto.randomUUID(), ...trimTemplate(input), created_at: at, updated_at: at };
+      setTemplates((all) => [...all, template]);
+      sync
+        .run({ table: "templates", kind: "upsert", row: template })
+        .then(({ error }) => {
+          if (!error) return;
+          setTemplates((all) => all.filter((t) => t.id !== template.id));
+          fail("We couldn’t save that template. Please try again.", error);
+        });
+      return template;
+    },
+    [sync, fail],
+  );
+
+  const updateTemplate = useCallback<JournalApi["updateTemplate"]>(
+    (id, input) => {
+      const previous = templates.find((t) => t.id === id);
+      if (!previous) return;
+      const patch = trimTemplate(input);
+      setTemplates((all) => all.map((t) => (t.id === id ? { ...t, ...patch, updated_at: new Date().toISOString() } : t)));
+      sync
+        .run({ table: "templates", kind: "update", key: id, patch })
+        .then(({ error }) => {
+          if (!error) return;
+          setTemplates((all) => all.map((t) => (t.id === id ? previous : t)));
+          fail("We couldn’t update that template.", error);
+        });
+    },
+    [templates, sync, fail],
+  );
+
+  const deleteTemplate = useCallback<JournalApi["deleteTemplate"]>(
+    (id) => {
+      const template = templates.find((t) => t.id === id);
+      if (!template) return;
+      const restore = () => setTemplates((all) => [...all.filter((t) => t.id !== id), template].sort(byOldest));
+      setTemplates((all) => all.filter((t) => t.id !== id));
+      sync
+        .run({ table: "templates", kind: "delete", key: id })
+        .then(({ error }) => {
+          if (error) {
+            restore();
+            fail("We couldn’t remove that template.", error);
+            return;
+          }
+          toast.show(`“${template.name}” removed.`, {
+            label: "Undo",
+            onClick: () => {
+              restore();
+              sync
+                .run({ table: "templates", kind: "upsert", row: template })
+                .then(({ error: restoreError }) => {
+                  if (!restoreError) return;
+                  setTemplates((all) => all.filter((t) => t.id !== id));
+                  fail("We couldn’t bring that template back.", restoreError);
+                });
+            },
+          });
+        });
+    },
+    [templates, sync, fail, toast],
+  );
+
   // Sent straight away rather than through the outbox: it's rare, and only matters online.
   const updateProfile = useCallback<JournalApi["updateProfile"]>(
     async (next) => {
@@ -338,6 +427,7 @@ export function JournalProvider({
       pendingWrites,
       categories,
       entries,
+      templates,
       categoryById,
       countByCategory,
       createCategory,
@@ -347,6 +437,9 @@ export function JournalProvider({
       updateEntry,
       toggleFavorite,
       deleteEntry,
+      createTemplate,
+      updateTemplate,
+      deleteTemplate,
       updateProfile,
       setWritingStyle,
     }),
@@ -358,6 +451,7 @@ export function JournalProvider({
       pendingWrites,
       categories,
       entries,
+      templates,
       categoryById,
       countByCategory,
       createCategory,
@@ -367,12 +461,23 @@ export function JournalProvider({
       updateEntry,
       toggleFavorite,
       deleteEntry,
+      createTemplate,
+      updateTemplate,
+      deleteTemplate,
       updateProfile,
       setWritingStyle,
     ],
   );
 
   return <JournalContext value={api}>{children}</JournalContext>;
+}
+
+function trimTemplate<T extends Partial<TemplateInput>>(input: T): T {
+  const out = { ...input };
+  if (out.name !== undefined) out.name = out.name.trim();
+  if (out.description !== undefined) out.description = out.description.trim();
+  if (out.title !== undefined) out.title = out.title.trim();
+  return out;
 }
 
 export function useJournal() {

@@ -33,6 +33,21 @@ export type EntryPatch = Partial<
   Pick<Entry, "category_id" | "title" | "content" | "mood" | "is_favorite" | "visibility">
 >;
 
+/** A starting shape for a thought: an optional title and a body of gentle prompts. */
+export type Template = {
+  id: string;
+  name: string;
+  emoji: string;
+  /** One quiet line about what it's for. */
+  description: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TemplateInput = Pick<Template, "name" | "emoji" | "description" | "title" | "content">;
+
 export const PAPERS = ["plain", "ruled", "dotted", "parchment"] as const;
 export type Paper = (typeof PAPERS)[number];
 
