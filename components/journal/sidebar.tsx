@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { signOut } from "@/app/(auth)/actions";
 import { clearDeviceCopy } from "@/lib/local-db";
+import { dailyQuote } from "@/lib/quotes";
 import { Logo } from "@/components/brand";
 import { Dot } from "@/components/ui/chip";
 import { Menu } from "@/components/ui/menu";
@@ -33,7 +34,7 @@ export function Sidebar({
   onCreateCategory: () => void;
 }) {
   const pathname = usePathname();
-  const { categories, countByCategory, entries, user, profile, pendingWrites } = useJournal();
+  const { categories, countByCategory, entries, user, profile, pendingWrites, timeZone } = useJournal();
   const { openProfileDialog } = useShell();
   const favorites = entries.filter((e) => e.is_favorite).length;
 
@@ -128,7 +129,7 @@ export function Sidebar({
       <div className="mt-6 rounded-2xl bg-wash-strong px-5 py-5 text-center">
         <FlowerIcon size={16} className="mx-auto text-ink" />
         <p className="mx-auto mt-2 max-w-[11rem] text-sm leading-relaxed text-ink">
-          A little every day goes a long way.
+          {dailyQuote(timeZone)}
         </p>
       </div>
 
