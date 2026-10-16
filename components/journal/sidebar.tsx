@@ -23,6 +23,7 @@ import {
 } from "@/components/icons";
 import { useShell } from "./app-shell";
 import { CategoryMenu } from "./category-actions";
+import { UNSORTED } from "./category-card";
 import { Avatar } from "./profile-dialog";
 import { useJournal } from "./store";
 
@@ -34,7 +35,7 @@ export function Sidebar({
   onCreateCategory: () => void;
 }) {
   const pathname = usePathname();
-  const { categories, countByCategory, entries, user, profile, pendingWrites, timeZone } = useJournal();
+  const { categories, countByCategory, unsortedCount, entries, user, profile, pendingWrites, timeZone } = useJournal();
   const { openProfileDialog } = useShell();
   const favorites = entries.filter((e) => e.is_favorite).length;
 
@@ -115,6 +116,26 @@ export function Sidebar({
               </li>
             );
           })}
+          {unsortedCount > 0 && (
+            <li className="animate-fade-in">
+              <Link
+                href={UNSORTED.href}
+                onClick={onNavigate}
+                aria-current={pathname === UNSORTED.href ? "page" : undefined}
+                className={cn(
+                  "group flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors duration-200",
+                  pathname === UNSORTED.href ? "bg-sage-100 text-ink" : "text-muted hover:bg-sage-100/70 hover:text-ink",
+                )}
+              >
+                <Dot
+                  color={UNSORTED.color}
+                  className="transition-transform duration-300 ease-spring group-hover:scale-125"
+                />
+                <span className="min-w-0 flex-1 truncate">{UNSORTED.name}</span>
+                <span className="text-xs tabular-nums text-subtle">{unsortedCount}</span>
+              </Link>
+            </li>
+          )}
         </ul>
         <button
           type="button"

@@ -4,6 +4,14 @@ import { cn } from "@/lib/cn";
 import { palette } from "@/lib/palette";
 import type { Category } from "@/lib/types";
 
+/** Where thoughts without a corner gather. It isn’t a real row, so it can’t be renamed or shared. */
+export const UNSORTED = {
+  name: "Unsorted",
+  emoji: "🪶",
+  color: "stone",
+  href: "/unsorted",
+} as const satisfies Pick<Category, "name" | "emoji" | "color"> & { href: string };
+
 /** Compact, pill-like tile linking to a category. */
 export function CategoryCard({
   category,
@@ -11,14 +19,14 @@ export function CategoryCard({
   style,
   className,
 }: {
-  category: Category;
+  category: Pick<Category, "id" | "name" | "emoji" | "color"> | typeof UNSORTED;
   count: number;
   style?: CSSProperties;
   className?: string;
 }) {
   return (
     <Link
-      href={`/c/${category.id}`}
+      href={"href" in category ? category.href : `/c/${category.id}`}
       style={style}
       className={cn(
         "group flex h-14 max-w-60 shrink-0 animate-fade-up snap-start items-center gap-3 rounded-2xl border py-2 pr-4 pl-2 transition-[transform,box-shadow] duration-300 ease-soft hover:-translate-y-0.5 hover:shadow-lift active:scale-[0.98]",

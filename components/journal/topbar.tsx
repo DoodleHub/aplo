@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/brand";
 import { MenuIcon } from "@/components/icons";
 import { IconButton } from "@/components/ui/button";
+import { UNSORTED } from "./category-card";
 import { Search } from "./search";
 import { useJournal } from "./store";
 
@@ -54,6 +55,7 @@ function useCrumb(): Array<{ label: string; href?: string }> {
   if (pathname === "/favorites") return [{ label: "Favorites" }];
   if (pathname === "/discover") return [{ label: "Discover" }];
   if (pathname === "/new") return [{ label: "New entry" }];
+  if (pathname === UNSORTED.href) return [{ label: UNSORTED.name }];
   if (pathname.startsWith("/c/")) {
     return [{ label: categoryById.get(pathname.slice(3))?.name ?? "Category" }];
   }

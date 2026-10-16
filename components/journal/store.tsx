@@ -43,6 +43,8 @@ type JournalApi = {
   pendingWrites: number;
   categoryById: Map<string, Category>;
   countByCategory: Map<string, number>;
+  /** Thoughts that aren’t in any corner. They gather in Unsorted. */
+  unsortedCount: number;
   createCategory: (input: CategoryInput) => Category;
   updateCategory: (id: string, input: Partial<CategoryInput>) => void;
   deleteCategory: (id: string) => void;
@@ -156,13 +158,16 @@ export function JournalProvider({
 
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
-  const countByCategory = useMemo(() => {
+  const [countByCategory, unsortedCount] = useMemo(() => {
     const counts = new Map<string, number>();
+    let unsorted = 0;
     for (const entry of entries) {
-      if (entry.category_id) counts.set(entry.category_id, (counts.get(entry.category_id) ?? 0) + 1);
+      const id = entry.category_id;
+      if (id && categoryById.has(id)) counts.set(id, (counts.get(id) ?? 0) + 1);
+      else unsorted++;
     }
-    return counts;
-  }, [entries]);
+    return [counts, unsorted] as const;
+  }, [entries, categoryById]);
 
   const fail = useCallback(
     (message: string, error: unknown) => {
@@ -430,6 +435,7 @@ export function JournalProvider({
       templates,
       categoryById,
       countByCategory,
+      unsortedCount,
       createCategory,
       updateCategory,
       deleteCategory,
@@ -454,6 +460,7 @@ export function JournalProvider({
       templates,
       categoryById,
       countByCategory,
+      unsortedCount,
       createCategory,
       updateCategory,
       deleteCategory,
@@ -484,4 +491,9 @@ export function useJournal() {
   const ctx = use(JournalContext);
   if (!ctx) throw new Error("useJournal must be used within JournalProvider");
   return ctx;
+}
+
+/** True when a thought isn’t in any corner, including one whose corner is gone. */
+export function isUnsorted(entry: Pick<Entry, "category_id">, categoryById: Map<string, Category>) {
+  return !entry.category_id || !categoryById.has(entry.category_id);
 }

@@ -6,14 +6,14 @@ import { ButtonLink } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { FlowerIcon, HeartIcon, PlusIcon, SunIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
-import { CategoryCard, CategoryRow } from "./category-card";
+import { CategoryCard, CategoryRow, UNSORTED } from "./category-card";
 import { EmptyState, EntryGrid } from "./entry-grid";
 import { HeroPrompt } from "./hero-prompt";
 import { SectionHeader } from "./section-header";
 import { useJournal } from "./store";
 
 export function HomeView() {
-  const { entries, categories, countByCategory, timeZone, now } = useJournal();
+  const { entries, categories, countByCategory, unsortedCount, timeZone, now } = useJournal();
   const { openCategoryDialog } = useShell();
   const [filter, setFilter] = useState<"all" | "favorites">("all");
   const visible = filter === "favorites" ? entries.filter((e) => e.is_favorite) : entries;
@@ -50,7 +50,7 @@ export function HomeView() {
             </button>
           }
         />
-        {categories.length > 0 ? (
+        {categories.length > 0 || unsortedCount > 0 ? (
           <CategoryRow>
             {categories.map((category, i) => (
               <CategoryCard
@@ -60,6 +60,13 @@ export function HomeView() {
                 style={{ animationDelay: `${80 + i * 35}ms` }}
               />
             ))}
+            {unsortedCount > 0 && (
+              <CategoryCard
+                category={UNSORTED}
+                count={unsortedCount}
+                style={{ animationDelay: `${80 + categories.length * 35}ms` }}
+              />
+            )}
           </CategoryRow>
         ) : (
           <EmptyState emoji="🏡" title="No corners yet" action={<CreateCornerButton />}>
