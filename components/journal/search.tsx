@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { shortDate } from "@/lib/format";
+import { plainText } from "@/lib/inline-format";
 import { SearchIcon } from "@/components/icons";
 import { useJournal } from "./store";
 
@@ -27,7 +28,7 @@ export function Search({ className }: { className?: string }) {
         const category = entry.category_id ? categoryById.get(entry.category_id) : undefined;
         return (
           entry.title.toLowerCase().includes(q) ||
-          entry.content.toLowerCase().includes(q) ||
+          plainText(entry.content).toLowerCase().includes(q) ||
           category?.name.toLowerCase().includes(q)
         );
       })
@@ -142,7 +143,7 @@ export function Search({ className }: { className?: string }) {
                         <span className="shrink-0 text-xs text-subtle">{shortDate(entry.created_at, timeZone)}</span>
                       </span>
                       <span className="mt-0.5 line-clamp-1 text-xs text-muted">
-                        <Highlight text={snippet(entry.content, q)} query={q} />
+                        <Highlight text={snippet(plainText(entry.content), q)} query={q} />
                       </span>
                     </span>
                   </li>

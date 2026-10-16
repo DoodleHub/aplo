@@ -22,6 +22,7 @@ import {
 } from "@/components/icons";
 import { useShell } from "./app-shell";
 import { EmptyState } from "./entry-grid";
+import { FormattedText } from "./formatted-text";
 import { Footer, PageIntro } from "./home-view";
 import { Avatar } from "./profile-dialog";
 import { useJournal } from "./store";
@@ -387,7 +388,7 @@ function DiscoverCard({
       </h3>
       {item.excerpt.trim() && (
         <p className="mt-2 line-clamp-4 text-[0.9rem] leading-relaxed whitespace-pre-line text-muted">
-          {item.excerpt.trim()}
+          <FormattedText text={item.excerpt.trim()} />
         </p>
       )}
 
@@ -533,10 +534,14 @@ function Reader({
             </div>
           )}
           {entry ? (
-            <p className="animate-fade-in text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">{entry.content}</p>
+            <p className="animate-fade-in text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
+              <FormattedText text={entry.content} />
+            </p>
           ) : (
             <div>
-              <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">{preview?.excerpt}</p>
+              <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
+                <FormattedText text={preview?.excerpt ?? ""} />
+              </p>
               <Skeleton className="mt-3 h-4 w-2/3" />
             </div>
           )}

@@ -124,6 +124,10 @@ Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pe
 
 A template is a starting title and a body of prompts. Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template replaces the page’s title and body; if that replaces real writing, a toast offers Undo. A page holding only an untouched template is never saved as an entry.
 
+## Formatting
+
+Bold, italic and strikethrough are stored in the thought’s text as `**bold**`, `_italic_` (or `*italic*`) and `~~struck~~`, parsed by `lib/inline-format.ts`. Marks never cross a line. ⌘B, ⌘I and ⌘⇧X (or the B / I / S buttons under the page) wrap or unwrap the selection. Read views render through `FormattedText`, which hides the marks. In the editor, `FormatBackdrop` draws the styled text behind a textarea whose own text is transparent, so every character must keep its plain width: the marks stay visible but faded, bold is the `faux-bold` stroke, and italic relies on the pens having no italic face loaded (the browser slants the same letters). Don’t add italic faces or swap in real bold weights there. Search matches `plainText()`.
+
 ## Voice
 
 Warm, brief and second-person.

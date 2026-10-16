@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 import { fullDateTime, wordCount } from "@/lib/format";
+import { toggleFormat, type Format } from "@/lib/inline-format";
 import { bodyLeading, papers, pens } from "@/lib/page-style";
 import { MOODS, palette } from "@/lib/palette";
 import { fillTemplate, nextBlank } from "@/lib/templates";
@@ -14,6 +15,7 @@ import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
 import { ArrowLeftIcon, CheckIcon, HeartIcon, MoreIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
+import { FormatBackdrop } from "./formatted-text";
 import { PageStyleMenu } from "./page-style-menu";
 import { TemplateMenu, TemplateStrip } from "./template-picker";
 import { useJournal } from "./store";
@@ -266,9 +268,30 @@ export function Editor({
       toast.show("Saved as a template. It’s waiting on every blank page."),
     );
 
-  /** Tab hops between a template's blanks; Enter keeps a list going. */
+  /** Wraps or unwraps the selection in the body, through the browser’s editing so ⌘Z undoes it. */
+  const format = (f: Format) => {
+    const el = contentRef.current;
+    if (!el) return;
+    const edit = toggleFormat(el.value, el.selectionStart, el.selectionEnd, f);
+    el.focus();
+    el.setSelectionRange(edit.from, edit.to);
+    typeText(el, edit.insert);
+    el.setSelectionRange(...edit.select);
+  };
+
+  /** ⌘B, ⌘I and ⌘⇧X format; Tab hops between a template's blanks; Enter keeps a list going. */
   const onBodyKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.nativeEvent.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.nativeEvent.isComposing) return;
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      const key = e.key.toLowerCase();
+      const f = e.shiftKey ? (key === "x" ? "strike" : null) : key === "b" ? "bold" : key === "i" ? "italic" : null;
+      if (f) {
+        e.preventDefault();
+        format(f);
+      }
+      return;
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     const el = e.currentTarget;
     const { selectionStart: start, selectionEnd: end, value } = el;
 
@@ -434,20 +457,23 @@ export function Editor({
           onManage={() => openTemplates()}
         />
 
-        <textarea
-          ref={contentRef}
-          value={draft.content}
-          onChange={(e) => change({ content: e.target.value })}
-          onKeyDown={onBodyKeyDown}
-          placeholder={previewed?.content || prompt}
-          aria-label="Your thoughts"
-          className={cn(
-            "mt-6 block min-h-[38vh] w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
-            pens[pen].body,
-            bodyLeading(paper, pen),
-            papers[paper].lines,
-          )}
-        />
+        <div className={cn("relative mt-6", papers[paper].lines)}>
+          <FormatBackdrop text={draft.content} className={cn("text-ink", pens[pen].body, bodyLeading(paper, pen))} />
+          <textarea
+            ref={contentRef}
+            value={draft.content}
+            onChange={(e) => change({ content: e.target.value })}
+            onKeyDown={onBodyKeyDown}
+            placeholder={previewed?.content || prompt}
+            aria-label="Your thoughts"
+            className={cn(
+              // The text itself is drawn by the backdrop; this keeps the caret, selection and typing.
+              "relative block min-h-[38vh] w-full resize-none overflow-hidden bg-transparent text-transparent caret-ink outline-none selection:bg-sage-200/60 selection:text-transparent placeholder:text-faint",
+              pens[pen].body,
+              bodyLeading(paper, pen),
+            )}
+          />
+        </div>
 
         <div className="mt-6 flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -476,9 +502,12 @@ export function Editor({
               })}
             </div>
           </div>
-          <p className="shrink-0 text-sm tabular-nums text-subtle">
-            {words} {words === 1 ? "word" : "words"}
-          </p>
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <FormatButtons onFormat={format} />
+            <p className="shrink-0 text-sm tabular-nums text-subtle">
+              {words} {words === 1 ? "word" : "words"}
+            </p>
+          </div>
         </div>
       </article>
 
@@ -491,6 +520,34 @@ export function Editor({
         Saves as you write · <kbd className="font-sans">⌘</kbd> + <kbd className="font-sans">Enter</kbd> when
         you’re done
       </p>
+    </div>
+  );
+}
+
+const FORMAT_BUTTONS: { format: Format; label: string; keys: string; glyph: string; className: string }[] = [
+  { format: "bold", label: "Bold (⌘B)", keys: "Meta+B", glyph: "B", className: "font-bold" },
+  { format: "italic", label: "Italic (⌘I)", keys: "Meta+I", glyph: "I", className: "font-serif italic" },
+  { format: "strike", label: "Strikethrough (⌘⇧X)", keys: "Meta+Shift+X", glyph: "S", className: "line-through" },
+];
+
+function FormatButtons({ onFormat }: { onFormat: (format: Format) => void }) {
+  return (
+    <div role="group" aria-label="Formatting" className="-ml-1 flex items-center sm:ml-0">
+      {FORMAT_BUTTONS.map((b) => (
+        <IconButton
+          key={b.format}
+          label={b.label}
+          aria-keyshortcuts={b.keys}
+          // Keep the text selected while the button is pressed.
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onFormat(b.format)}
+          className="rounded-xl"
+        >
+          <span aria-hidden="true" className={cn("text-[0.95rem] leading-none", b.className)}>
+            {b.glyph}
+          </span>
+        </IconButton>
+      ))}
     </div>
   );
 }

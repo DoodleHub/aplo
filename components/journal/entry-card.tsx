@@ -7,6 +7,7 @@ import { shortDate, wordCount } from "@/lib/format";
 import { isShared, type Category, type Entry } from "@/lib/types";
 import { Chip } from "@/components/ui/chip";
 import { GlobeIcon, HeartIcon } from "@/components/icons";
+import { FormattedText } from "./formatted-text";
 
 export function EntryCard({
   entry,
@@ -66,7 +67,7 @@ export function EntryCard({
         {title}
       </h3>
       <p className="mt-2 line-clamp-2 text-[0.9rem] leading-relaxed text-muted">
-        {entry.content.trim() || "Nothing written yet — a quiet page waiting for you."}
+        {entry.content.trim() ? <FormattedText text={entry.content.trim()} /> : "Nothing written yet — a quiet page waiting for you."}
       </p>
 
       <div className="mt-auto flex items-end justify-between pt-5">

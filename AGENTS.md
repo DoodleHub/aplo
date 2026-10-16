@@ -61,6 +61,7 @@ supabase/migrations/ the schema, in order
   - autosaves (600ms debounce), with ⌘S to save now and ⌘Enter for Done
   - creates nothing until there's real writing; a mood, corner or untouched template alone doesn't count
   - page style: paper and pen, saved on the profile
+  - bold, italic, strikethrough as `**` / `_` / `~~` marks in the text (`lib/inline-format.ts`); see Formatting in DESIGN_SYSTEM.md
 - **Templates:** built-in ones in code, custom ones in `public.templates`.
   - A "Start with" strip on blank pages, a toolbar menu, and a studio dialog.
   - Tab jumps between blanks; Enter continues lists.
