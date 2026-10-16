@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 import { papers, pens } from "@/lib/page-style";
 import { PAPERS, PENS, type Paper, type Pen } from "@/lib/types";
 import { Popover } from "@/components/ui/popover";
-import { CheckIcon, PaperIcon } from "@/components/icons";
+import { CheckIcon, ChevronDownIcon } from "@/components/icons";
 import { useJournal } from "./store";
 
 /**
@@ -26,14 +26,19 @@ export function PageStyleMenu() {
         <button
           type="button"
           {...props}
-          aria-label="Page style"
+          aria-label={`Page style: ${papers[paper].label} paper, ${pens[pen].label} handwriting`}
           title="Page style"
           className={cn(
-            "inline-flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-sage-100 hover:text-ink active:scale-95",
+            "group inline-flex h-10 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-sage-100 hover:text-ink sm:pr-3",
             props["aria-expanded"] && "bg-sage-100 text-ink",
           )}
         >
-          <PaperIcon size={20} />
+          <PageSwatch paper={paper} pen={pen} />
+          <span className="hidden sm:inline">Page</span>
+          <ChevronDownIcon
+            size={14}
+            className={cn("opacity-60 transition-transform duration-200 ease-soft", props["aria-expanded"] && "rotate-180")}
+          />
         </button>
       )}
     >
@@ -71,6 +76,31 @@ export function PageStyleMenu() {
         </>
       )}
     </Popover>
+  );
+}
+
+/**
+ * A thumbnail of the page as it is now: its paper, its lines and the handwriting on it.
+ * Reads as "this is your page" at a glance, and shows what a change did before the panel closes.
+ */
+function PageSwatch({ paper, pen }: { paper: Paper; pen: Pen }) {
+  return (
+    <span
+      key={`${paper}-${pen}`}
+      aria-hidden="true"
+      className={cn(
+        "relative block h-7 w-6 shrink-0 animate-pop-in overflow-hidden rounded-[0.4rem] border shadow-sm transition-transform duration-200 ease-soft group-hover:-rotate-3 group-active:scale-95",
+        papers[paper].page,
+      )}
+    >
+      <span
+        className={cn("absolute inset-0", papers[paper].lines)}
+        style={papers[paper].lines ? { backgroundSize: paper === "dotted" ? "0.3rem 0.3rem" : "100% 0.4rem" } : undefined}
+      />
+      <span className={cn("absolute inset-0 flex items-center justify-center text-[0.7rem] leading-none text-ink-soft", pens[pen].family)}>
+        Aa
+      </span>
+    </span>
   );
 }
 
