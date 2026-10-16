@@ -12,6 +12,7 @@ export function Dialog({
   description,
   children,
   size = "md",
+  fill = false,
   className,
 }: {
   open: boolean;
@@ -21,6 +22,8 @@ export function Dialog({
   children: ReactNode;
   /** `lg` fits a form beside a live preview. */
   size?: "md" | "lg";
+  /** Let the body fill a fixed-height dialog (set the height in `className`), so a child with `mt-auto` sits at the bottom. */
+  fill?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -51,7 +54,7 @@ export function Dialog({
       )}
     >
       {open && (
-        <div className="p-6 sm:p-7">
+        <div className={cn("p-6 sm:p-7", fill && "flex min-h-full flex-col")}>
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <h2 id="dialog-title" className="font-display text-xl font-semibold tracking-tight">

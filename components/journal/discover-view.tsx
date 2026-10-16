@@ -482,6 +482,13 @@ function Reader({
     return () => window.removeEventListener("keydown", onKey);
   }, [id, onPrevious, onNext]);
 
+  // Each thought starts at its top, not wherever the last one was scrolled to.
+  const body = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const dialog = body.current?.closest("dialog");
+    if (dialog) dialog.scrollTop = 0;
+  }, [id]);
+
   const shown = entry ?? preview;
   const missing = loaded?.id === id && !entry;
   const title = shown ? shown.title.trim() || "Untitled thought" : "A shared thought";
@@ -491,7 +498,9 @@ function Reader({
       open={Boolean(id)}
       onClose={onClose}
       title={title}
-      className="max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto overscroll-contain"
+      // A fixed height keeps the previous/next buttons still as thoughts of different lengths come and go.
+      fill
+      className="h-[min(40rem,calc(100dvh-2rem))] max-w-2xl overflow-y-auto overscroll-contain"
       description={
         shown && (
           <span className="mt-2 flex items-center gap-2">
@@ -507,48 +516,50 @@ function Reader({
         )
       }
     >
-      {missing && !failed ? (
-        <EmptyState emoji="🍃" title="This thought isn’t shared anymore">
-          Its author may have made it private again.
-        </EmptyState>
-      ) : failed ? (
-        <EmptyState emoji="☁️" title="We couldn’t open this thought">
-          Check your connection and try again.
-        </EmptyState>
-      ) : !shown ? (
-        <ReaderSkeleton />
-      ) : (
-        <div key={shown.id} className="animate-fade-in">
-          {(shown.category_name || shown.mood) && (
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              {shown.category_name && shown.category_color && (
-                <Chip color={shown.category_color} emoji={shown.category_emoji ?? undefined}>
-                  {shown.category_name}
-                </Chip>
-              )}
-              {shown.mood && (
-                <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-sage-50 px-2 text-[0.8rem] text-muted">
-                  {shown.mood} {MOODS.find((m) => m.emoji === shown.mood)?.label}
-                </span>
-              )}
-            </div>
-          )}
-          {entry ? (
-            <p className="animate-fade-in text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
-              <FormattedText text={entry.content} />
-            </p>
-          ) : (
-            <div>
-              <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
-                <FormattedText text={preview?.excerpt ?? ""} />
+      <div ref={body} className="flex-1">
+        {missing && !failed ? (
+          <EmptyState emoji="🍃" title="This thought isn’t shared anymore">
+            Its author may have made it private again.
+          </EmptyState>
+        ) : failed ? (
+          <EmptyState emoji="☁️" title="We couldn’t open this thought">
+            Check your connection and try again.
+          </EmptyState>
+        ) : !shown ? (
+          <ReaderSkeleton />
+        ) : (
+          <div key={shown.id} className="animate-fade-in">
+            {(shown.category_name || shown.mood) && (
+              <div className="mb-5 flex flex-wrap items-center gap-2">
+                {shown.category_name && shown.category_color && (
+                  <Chip color={shown.category_color} emoji={shown.category_emoji ?? undefined}>
+                    {shown.category_name}
+                  </Chip>
+                )}
+                {shown.mood && (
+                  <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-sage-50 px-2 text-[0.8rem] text-muted">
+                    {shown.mood} {MOODS.find((m) => m.emoji === shown.mood)?.label}
+                  </span>
+                )}
+              </div>
+            )}
+            {entry ? (
+              <p className="animate-fade-in text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
+                <FormattedText text={entry.content} />
               </p>
-              <Skeleton className="mt-3 h-4 w-2/3" />
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div>
+                <p className="text-[1.05rem] leading-[1.85] whitespace-pre-wrap text-ink">
+                  <FormattedText text={preview?.excerpt ?? ""} />
+                </p>
+                <Skeleton className="mt-3 h-4 w-2/3" />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      <div className="mt-8 flex items-center gap-2 border-t border-line pt-5">
+      <div className="sticky bottom-0 -mx-6 -mb-6 mt-8 flex items-center gap-2 border-t border-line bg-surface px-6 pt-5 pb-6 sm:-mx-7 sm:-mb-7 sm:px-7 sm:pb-7">
         <IconButton label="Previous thought" onClick={onPrevious} disabled={!onPrevious}>
           <ArrowLeftIcon size={18} />
         </IconButton>
