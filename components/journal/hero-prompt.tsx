@@ -4,8 +4,8 @@ import { ArrowUpRightIcon } from "@/components/icons";
 
 export function HeroPrompt() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-wash-line bg-wash px-6 py-8 sm:px-10 sm:py-10">
-      <div className="relative z-10 max-w-md">
+    <section className="relative flex items-end gap-6 overflow-hidden rounded-3xl border border-wash-line bg-wash px-6 py-8 sm:px-10 sm:py-10">
+      <div className="relative z-10 max-w-md min-w-0 flex-1">
         <p className="text-eyebrow font-semibold uppercase text-sage-500">A moment to yourself</p>
         <h2 className="mt-3 font-display text-[1.55rem] leading-tight font-semibold tracking-[-0.03em] text-ink sm:text-[1.75rem]">
           How’s your little world today?
@@ -26,7 +26,8 @@ export function HeroPrompt() {
           />
         </Link>
       </div>
-      <CloudWriter className="pointer-events-none absolute right-4 bottom-0 hidden h-[88%] w-auto md:right-10 md:block lg:right-16" />
+      {/* A flex sibling rather than absolutely placed, so on tablet widths it shrinks beside the text instead of sliding under it. */}
+      <CloudWriter className="pointer-events-none -mb-10 ml-auto hidden h-auto w-[45%] max-w-104 shrink-0 md:block" />
     </section>
   );
 }
