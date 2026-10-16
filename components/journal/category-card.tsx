@@ -26,7 +26,7 @@ export function CategoryCard({
         className,
       )}
     >
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/60 text-[1.25rem] leading-none transition-transform duration-300 ease-soft group-hover:scale-110 group-hover:-rotate-6">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface/60 text-[1.25rem] leading-none transition-transform will-change-transform duration-300 ease-soft group-hover:scale-110 group-hover:-rotate-6">
         {category.emoji}
       </span>
       <span className="min-w-0">
