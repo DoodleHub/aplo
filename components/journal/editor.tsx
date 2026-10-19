@@ -487,18 +487,29 @@ export function Editor({
                   <button
                     key={mood.emoji}
                     type="button"
-                    title={mood.label}
                     aria-label={mood.label}
                     aria-pressed={selected}
                     onClick={() => change({ mood: selected ? null : mood.emoji }, true)}
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-xl text-xl transition-all duration-200 ease-spring",
-                      selected
-                        ? "scale-110 bg-sage-100 ring-1 ring-sage-300"
-                        : "opacity-60 grayscale-[40%] hover:scale-110 hover:opacity-100 hover:grayscale-0",
-                    )}
+                    className="group relative"
                   >
-                    {mood.emoji}
+                    <span
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-xl text-xl transition-all duration-200 ease-spring",
+                        selected
+                          ? "scale-110 bg-sage-100 ring-1 ring-sage-300"
+                          : "opacity-60 grayscale-40 group-hover:scale-110 group-hover:opacity-100 group-hover:grayscale-0",
+                      )}
+                    >
+                      {mood.emoji}
+                    </span>
+                    {/* `hidden` rather than opacity so the label never adds sideways overflow on narrow screens;
+                        group-hover only fires on devices that really hover, so taps don't leave it stuck open. */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 animate-fade-in whitespace-nowrap rounded-lg bg-ink px-2 py-1 text-xs font-medium text-canvas shadow-sm group-hover:block group-focus-visible:block"
+                    >
+                      {mood.label}
+                    </span>
                   </button>
                 );
               })}
