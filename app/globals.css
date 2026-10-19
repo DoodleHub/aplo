@@ -4,7 +4,7 @@
 
 /* ==========================================================================
    aplo design system — tokens
-   Soft, warm, paper-like. Sage is the voice; category tints are the accents.
+   Soft, warm, paper-like. Sage is the voice; corner tints are the accents.
    See DESIGN_SYSTEM.md and /design-system for usage.
    ========================================================================== */
 
@@ -59,7 +59,7 @@
   --color-danger: #b4574a;
   --color-danger-soft: #f6e4e0;
 
-  /* Category palettes: tint (card), chip, dot */
+  /* Corner palettes: tint (card), chip, dot */
   --color-cat-sage: #e8ebe0;
   --color-cat-sage-chip: #e8ebe0;
   --color-cat-sage-dot: #909e7f;

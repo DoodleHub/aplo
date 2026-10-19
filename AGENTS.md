@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 A calm, private journaling app. People write **thoughts** (entries), sort them into **corners** (categories), and can choose to share some anonymously in **Discover**. It's an installable PWA that keeps working offline.
 
-Use the product's words in UI copy and names: "thought", "corner", "pen name", never "post", "folder" or "username". Visual language, tokens, components and voice are in [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md); read it before any UI work. The live component reference is at `/design-system`.
+Use the product's words in UI copy and names: "thought", "corner", "pen name", never "post", "folder" or "username". A corner is stored as a `categories` row, so code that mirrors the schema (`Category`, `category_id`, the outbox's `"categories"` table, Discover's `category_*` columns) keeps that name, but anything a person can see or type, including URLs like `/new?corner=<id>`, says “corner”, never “category”. Visual language, tokens, components and voice are in [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md); read it before any UI work. The live component reference is at `/design-system`.
 
 ## Stack and commands
 

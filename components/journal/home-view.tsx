@@ -60,7 +60,7 @@ export function HomeView() {
               className="inline-flex h-10 items-center gap-1.5 rounded-xl px-2 text-[0.95rem] text-muted transition-colors hover:text-ink"
             >
               <PlusIcon size={15} />
-              Create category
+              New corner
             </button>
           }
         />

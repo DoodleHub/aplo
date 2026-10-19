@@ -100,11 +100,11 @@ export function Sidebar({
       </nav>
 
       <div className="mt-9 flex items-center justify-between pr-1 pl-3">
-        <h2 className="text-eyebrow font-semibold uppercase text-muted">My categories</h2>
+        <h2 className="text-eyebrow font-semibold uppercase text-muted">My corners</h2>
         <button
           type="button"
           onClick={onCreateCategory}
-          aria-label="New category"
+          aria-label="New corner"
           className="flex h-7 w-7 items-center justify-center rounded-lg text-muted transition-colors hover:bg-sage-100 hover:text-ink"
         >
           <PlusIcon size={15} />
@@ -193,7 +193,7 @@ export function Sidebar({
           className="mt-1 flex h-11 w-full items-center gap-3 rounded-xl px-3 text-[0.95rem] text-muted transition-colors hover:bg-sage-100/70 hover:text-ink"
         >
           <PlusIcon size={16} />
-          New category
+          New corner
         </button>
       </div>
 

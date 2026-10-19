@@ -62,7 +62,7 @@ export function NewEntry() {
   if (!mounted) return <EditorSkeleton />;
 
   const id = savedId ?? freshId;
-  const requested = searchParams.get("category");
+  const requested = searchParams.get("corner");
   const defaultCategoryId = requested && categoryById.has(requested) ? requested : null;
 
   return (

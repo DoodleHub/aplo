@@ -56,7 +56,7 @@ export function CategoryView({ id }: { id: string }) {
         }
         actions={
           <>
-            <ButtonLink href={`/new?category=${id}`} icon={<PlusIcon size={18} strokeWidth={2.2} />}>
+            <ButtonLink href={`/new?corner=${id}`} icon={<PlusIcon size={18} strokeWidth={2.2} />}>
               New entry
             </ButtonLink>
             <CategoryMenu category={category} triggerClassName="h-11 w-11 bg-surface/50 text-ink hover:bg-surface/80" />
@@ -73,7 +73,7 @@ export function CategoryView({ id }: { id: string }) {
               emoji={category.emoji}
               title="A quiet little corner"
               action={
-                <ButtonLink href={`/new?category=${id}`} variant="soft" icon={<PlusIcon size={18} />}>
+                <ButtonLink href={`/new?corner=${id}`} variant="soft" icon={<PlusIcon size={18} />}>
                   Write something here
                 </ButtonLink>
               }

@@ -113,7 +113,7 @@ export default function DesignSystemPage() {
             Design system
           </h1>
           <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-muted">
-            Soft, warm and paper-like. Sage carries the voice; category tints add personality. Everything is
+            Soft, warm and paper-like. Sage carries the voice; corner tints add personality. Everything is
             rounded, gently elevated, and moves with an easy, settling ease.
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function DesignSystemPage() {
             </div>
           ))}
           <div>
-            <h3 className="mb-3 text-eyebrow font-semibold uppercase text-muted">Category palettes</h3>
+            <h3 className="mb-3 text-eyebrow font-semibold uppercase text-muted">Corner palettes</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {CATEGORY_COLORS.map((color) => (
                 <div key={color} className={`rounded-2xl border p-4 ${palette[color].card}`}>
@@ -240,7 +240,7 @@ export default function DesignSystemPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-xs text-muted">24px grid, 1.6 stroke, round caps &amp; joins. Emoji are used for categories and moods.</p>
+            <p className="mt-4 text-xs text-muted">24px grid, 1.6 stroke, round caps &amp; joins. Emoji are used for corners and moods.</p>
             <div className="mt-4 flex flex-wrap gap-1 text-xl">
               {MOODS.map((m) => (
                 <span key={m.emoji} title={m.label} className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas">

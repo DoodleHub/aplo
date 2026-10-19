@@ -1,6 +1,6 @@
 # aplo design system
 
-Soft, warm and paper-like. Sage carries the voice; category tints add personality.
+Soft, warm and paper-like. Sage carries the voice; corner tints add personality.
 Live reference: run the app and open **`/design-system`**.
 
 - **Tokens:** `app/globals.css` (Tailwind v4 `@theme`)
@@ -34,7 +34,7 @@ Live reference: run the app and open **`/design-system`**.
 | `heart` | `#a48379` | Favorite state |
 | `danger` | `#b4574a` | Destructive actions |
 
-**Category palettes.** There are six: `sage`, `sand`, `lilac`, `sky`, `rose` and `stone`. Each one has three tokens:
+**Corner palettes.** There are six: `sage`, `sand`, `lilac`, `sky`, `rose` and `stone`. Each one has three tokens:
 
 - `cat-{name}` for the card tint
 - `cat-{name}-chip` for chips
@@ -101,7 +101,7 @@ Pens: Clean (DM Sans), Breezy (Caveat), Neat (Patrick Hand) and Felt tip (Kalam)
 | Button / ButtonLink | `ui/button.tsx` | Variants: `primary`, `soft`, `outline`, `ghost`, `danger`. Sizes: `sm`, `md`, `lg`. |
 | IconButton | `ui/button.tsx` | Round, 36px, always labelled |
 | Input / PasswordInput / Field | `ui/field.tsx` | Field wires the label, error and `aria-*` attributes |
-| Chip / Dot | `ui/chip.tsx` | Category chip; `stone` is used for "Unsorted" |
+| Chip / Dot | `ui/chip.tsx` | Corner chip; `stone` is used for "Unsorted" |
 | Segmented | `ui/segmented.tsx` | "All entries / Favorites" tabs |
 | Dialog | `ui/dialog.tsx` | Native `<dialog>`: focus trap, Esc to close, backdrop click to close |
 | Popover | `ui/popover.tsx` | Anchored floating panel used by Menu and the page style picker |

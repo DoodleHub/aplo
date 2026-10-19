@@ -58,7 +58,7 @@ function useCrumb(): Array<{ label: string; href?: string }> {
   if (pathname === "/new") return [{ label: "New entry" }];
   if (pathname === UNSORTED.href) return [{ label: UNSORTED.name }];
   if (pathname.startsWith("/c/")) {
-    return [{ label: categoryById.get(pathname.slice(3))?.name ?? "Category" }];
+    return [{ label: categoryById.get(pathname.slice(3))?.name ?? "Corner" }];
   }
   if (pathname.startsWith("/entry/")) {
     const entry = entries.find((e) => e.id === pathname.slice(7));
