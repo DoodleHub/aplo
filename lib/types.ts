@@ -86,6 +86,11 @@ export type DiscoverItem = {
   author_name: string;
   author_emoji: string;
   is_mine: boolean;
+  /** Whether the reader has favorited it. For their own thoughts this is the entry's own flag. */
+  is_favorite: boolean;
 };
+
+/** A shared thought the reader favorited, as their Favorites lists it. */
+export type DiscoverFavorite = DiscoverItem & { favorited_at: string };
 
 export type DiscoverEntry = Omit<DiscoverItem, "excerpt" | "word_count"> & { content: string };

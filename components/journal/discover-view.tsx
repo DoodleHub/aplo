@@ -21,6 +21,7 @@ import {
   PlusIcon,
 } from "@/components/icons";
 import { useShell } from "./app-shell";
+import { FavoriteButton, useDiscoverFavorites } from "./discover-favorites";
 import { EmptyState } from "./entry-grid";
 import { FormattedText } from "./formatted-text";
 import { Footer, PageIntro } from "./home-view";
@@ -53,11 +54,13 @@ async function fetchEntry(id: string) {
 
 const readingTime = (words: number) => `${Math.max(1, Math.round(words / 200))} min read`;
 
-export function DiscoverView() {
+/**
+ * Opens shared thoughts over a list, at `<path>?entry=<id>`, so a reload or a shared link
+ * lands on the same thought and Back closes it.
+ */
+export function useReader(path: string, items: DiscoverItem[]) {
   const searchParams = useSearchParams();
   const openId = searchParams.get("entry");
-  const [mood, setMood] = useState<string | null>(null);
-  const [items, setItems] = useState<DiscoverItem[]>([]);
   // Whether the open reader has its own history entry, so closing it can simply go back.
   const pushed = useRef(false);
 
@@ -68,23 +71,42 @@ export function DiscoverView() {
   }, []);
 
   const open = (id: string) => {
-    window.history.pushState(null, "", `/discover?entry=${id}`);
+    window.history.pushState(null, "", `${path}?entry=${id}`);
     pushed.current = true;
   };
   const close = () => {
     if (pushed.current) window.history.back();
-    else window.history.replaceState(null, "", "/discover");
+    else window.history.replaceState(null, "", path);
     pushed.current = false;
   };
-  const step = (by: 1 | -1) => {
-    const index = items.findIndex((item) => item.id === openId);
-    const next = items[index + by];
-    if (index >= 0 && next) window.history.replaceState(null, "", `/discover?entry=${next.id}`);
-  };
   const index = items.findIndex((item) => item.id === openId);
+  const step = (by: 1 | -1) => {
+    const next = items[index + by];
+    if (index >= 0 && next) window.history.replaceState(null, "", `${path}?entry=${next.id}`);
+  };
   const previousId = index > 0 ? items[index - 1].id : undefined;
   const nextId = index >= 0 ? items[index + 1]?.id : undefined;
   const neighbors = useMemo(() => [previousId, nextId], [previousId, nextId]);
+
+  return {
+    open,
+    /** Props for `<Reader>`. */
+    reader: {
+      id: openId,
+      preview: index >= 0 ? items[index] : undefined,
+      neighbors,
+      onClose: close,
+      onPrevious: index > 0 ? () => step(-1) : undefined,
+      onNext: index >= 0 && index < items.length - 1 ? () => step(1) : undefined,
+    },
+  };
+}
+
+export function DiscoverView() {
+  const [mood, setMood] = useState<string | null>(null);
+  const [items, setItems] = useState<DiscoverItem[]>([]);
+  const { open, reader } = useReader("/discover", items);
+  const favorites = useDiscoverFavorites();
 
   return (
     <div>
@@ -114,19 +136,12 @@ export function DiscoverView() {
       </p>
 
       <section className="mt-8">
-        <Feed key={mood ?? "all"} mood={mood} onOpen={open} onItems={setItems} />
+        <Feed key={mood ?? "all"} mood={mood} onOpen={open} onItems={setItems} favorites={favorites} />
       </section>
 
       <Footer />
 
-      <Reader
-        id={openId}
-        preview={index >= 0 ? items[index] : undefined}
-        neighbors={neighbors}
-        onClose={close}
-        onPrevious={index > 0 ? () => step(-1) : undefined}
-        onNext={index >= 0 && index < items.length - 1 ? () => step(1) : undefined}
-      />
+      <Reader {...reader} favorites={favorites} />
     </div>
   );
 }
@@ -190,10 +205,12 @@ function Feed({
   mood,
   onOpen,
   onItems,
+  favorites,
 }: {
   mood: string | null;
   onOpen: (id: string) => void;
   onItems: (items: DiscoverItem[]) => void;
+  favorites: Favorites;
 }) {
   const { timeZone } = useJournal();
   const offline = useIsOffline();
@@ -319,6 +336,8 @@ function Feed({
             timeZone={timeZone}
             now={now}
             onOpen={onOpen}
+            favorite={favorites.isFavorite(item)}
+            onToggleFavorite={() => favorites.toggle(item)}
             style={{ animationDelay: `${Math.min(i % PAGE_SIZE, 8) * 40}ms` }}
           />
         ))}
@@ -341,17 +360,23 @@ function Feed({
   );
 }
 
-function DiscoverCard({
+type Favorites = ReturnType<typeof useDiscoverFavorites>;
+
+export function DiscoverCard({
   item,
   timeZone,
   now,
   onOpen,
+  favorite,
+  onToggleFavorite,
   style,
 }: {
   item: DiscoverItem;
   timeZone: string;
   now: number;
   onOpen: (id: string) => void;
+  favorite: boolean;
+  onToggleFavorite: () => void;
   style?: CSSProperties;
 }) {
   const title = item.title.trim() || "Untitled thought";
@@ -388,6 +413,7 @@ function DiscoverCard({
             {item.mood}
           </span>
         )}
+        <FavoriteButton favorite={favorite} onToggle={onToggleFavorite} className="-my-1.5 -mr-2" />
       </header>
 
       <h3 className="mt-4 line-clamp-2 font-display text-[1.15rem] leading-snug font-semibold tracking-[-0.02em] text-ink">
@@ -419,7 +445,7 @@ function DiscoverCard({
   );
 }
 
-function FeedSkeleton({ count = 6 }: { count?: number }) {
+export function FeedSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-3", count < 6 && "mt-4")} aria-busy="true">
       {Array.from({ length: count }, (_, i) => (
@@ -447,13 +473,14 @@ function FeedSkeleton({ count = 6 }: { count?: number }) {
 }
 
 /** The full thought, over the feed. Opens instantly with what the card knows, then fills in. */
-function Reader({
+export function Reader({
   id,
   preview,
   neighbors,
   onClose,
   onPrevious,
   onNext,
+  favorites,
 }: {
   id: string | null;
   preview?: DiscoverItem;
@@ -462,6 +489,7 @@ function Reader({
   onClose: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
+  favorites: Favorites;
 }) {
   const { timeZone } = useJournal();
   // Every thought fetched while browsing, so stepping back and forth shows the full text straight away.
@@ -578,9 +606,17 @@ function Reader({
         <IconButton label="Next thought" onClick={onNext} disabled={!onNext}>
           <ArrowLeftIcon size={18} className="rotate-180" />
         </IconButton>
+        {shown && !missing && (
+          <FavoriteButton
+            favorite={favorites.isFavorite(shown)}
+            onToggle={() => favorites.toggle(shown)}
+            className="ml-auto"
+          />
+        )}
         {shown?.is_mine && (
-          <ButtonLink href={`/entry/${shown.id}`} variant="soft" size="sm" className="ml-auto" icon={<PencilIcon size={15} />}>
-            Edit in your journal
+          <ButtonLink href={`/entry/${shown.id}`} variant="soft" size="sm" icon={<PencilIcon size={15} />}>
+            <span className="sm:hidden">Edit</span>
+            <span className="hidden sm:inline">Edit in your journal</span>
           </ButtonLink>
         )}
       </div>

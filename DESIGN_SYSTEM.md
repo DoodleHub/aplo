@@ -118,7 +118,7 @@ Pens: Clean (DM Sans), Breezy (Caveat), Neat (Patrick Hand) and Felt tip (Kalam)
 ## Sharing
 
 Everything is private by default. A corner can be shared; each entry follows its corner until you pick "Shared" or "Only me" (`isShared` in `lib/types.ts`).
-Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pen name and emoji, never by email. Discover reads go through the `discover_feed` / `discover_entry` RPCs, which hide the names of private corners.
+Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pen name and emoji, never by email. Discover reads go through the `discover_feed` / `discover_entry` RPCs, which hide the names of private corners. Every shared thought has a heart (on the card and in the reader); favorites from Discover appear in their own “From Discover” section on Favorites.
 
 ## Templates
 

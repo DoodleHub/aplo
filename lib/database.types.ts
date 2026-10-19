@@ -1,5 +1,5 @@
 // Mirrors supabase/migrations. Regenerate with `supabase gen types typescript` once linked.
-import type { CategoryColor, DiscoverEntry, DiscoverItem, Paper, Pen, Visibility } from "./types";
+import type { CategoryColor, DiscoverEntry, DiscoverFavorite, DiscoverItem, Paper, Pen, Visibility } from "./types";
 
 type CategoryRow = {
   id: string;
@@ -47,6 +47,12 @@ type TemplateRow = {
   updated_at: string;
 };
 
+type DiscoverFavoriteRow = {
+  user_id: string;
+  entry_id: string;
+  created_at: string;
+};
+
 type Insert<Row, Required extends keyof Row> = Pick<Row, Required> & Partial<Omit<Row, Required>>;
 
 export type Database = {
@@ -70,6 +76,12 @@ export type Database = {
         Update: Partial<TemplateRow>;
         Relationships: [];
       };
+      discover_favorites: {
+        Row: DiscoverFavoriteRow;
+        Insert: Insert<DiscoverFavoriteRow, "entry_id">;
+        Update: Partial<DiscoverFavoriteRow>;
+        Relationships: [];
+      };
       profiles: {
         Row: ProfileRow;
         Insert: Insert<ProfileRow, "display_name">;
@@ -86,6 +98,10 @@ export type Database = {
       discover_entry: {
         Args: { p_id: string };
         Returns: DiscoverEntry[];
+      };
+      discover_favorite_feed: {
+        Args: { p_before?: string | null; p_before_id?: string | null; p_limit?: number };
+        Returns: DiscoverFavorite[];
       };
     };
     Enums: Record<never, never>;

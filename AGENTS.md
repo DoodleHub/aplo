@@ -69,6 +69,7 @@ supabase/migrations/ the schema, in order
 - **Sharing and Discover:**
   - Visibility: an entry is `inherit` (follows its corner), `public` or `private`. Decide with `isShared()`; don't reimplement it.
   - Discover reads go only through the `discover_feed` / `discover_entry` RPCs. People appear by pen name and emoji, never by email.
+  - Favorites: your own thoughts use `entries.is_favorite`; other people’s shared thoughts go in `discover_favorites` (written straight to Supabase, not the outbox, since Discover is online-only) and are listed with the `discover_favorite_feed` RPC. Authors never see who favorited them.
 - **Theme:** light, dark or system. It's set on `<html data-theme>` before first paint (`lib/theme.ts`). Dark mode uses the `dark:` variant and redefined tokens in `globals.css`.
 - **PWA and offline:**
   - `sw.js` serves assets cache-first and pages and RSC data network-first.
@@ -89,11 +90,12 @@ Profile edits (pen name) go straight to Supabase, not through the outbox. Paper 
 ## Supabase
 
 - Project ref `kwfebwzqwoibszwtmouk` (see `.mcp.json`). It is the **live** database with real users; treat DDL and data writes as production changes.
-- Tables in `public`: `categories`, `entries`, `profiles`, `templates`. Each has `user_id uuid default auth.uid()` (profiles key on `id`), RLS enabled, `anon` revoked, and four owner-only policies written as `(select auth.uid()) = user_id`. Copy that pattern for new tables.
+- Tables in `public`: `categories`, `entries`, `profiles`, `templates`, `discover_favorites`. Each has `user_id uuid default auth.uid()` (profiles key on `id`), RLS enabled, `anon` revoked, and four owner-only policies written as `(select auth.uid()) = user_id`. Copy that pattern for new tables.
 - `entries` reference `categories(id, user_id)`, so an entry can't point at someone else's corner. Deleting a corner sets its entries' `category_id` to null.
+- `discover_favorites` (keyed on `user_id, entry_id`, no update) only accepts someone else’s currently shared thought; a trigger in `private` checks that. It cascades when the thought is deleted.
 - `updated_at` is kept by the `public.set_updated_at()` trigger.
 - Sign-up triggers on `auth.users` (seed corners, create a profile with a random pen name) live in the `private` schema, which isn't exposed and has execute revoked.
-- `discover_feed` / `discover_entry` are `SECURITY DEFINER` on purpose. They check for a signed-in caller and return only shareable columns, and the private names of corners are hidden. The advisor warns about them; that's expected. Any change to them must keep those guarantees.
+- `discover_feed` / `discover_entry` / `discover_favorite_feed` are `SECURITY DEFINER` on purpose. They check for a signed-in caller and return only shareable columns, and the private names of corners are hidden. The advisor warns about them; that's expected. Any change to them must keep those guarantees.
 - Columns have length and enum `check` constraints. Keep the client-side `maxLength`s and the unions in `lib/types.ts` in sync with them.
 - Server code reads the user with `supabase.auth.getClaims()`, never `getSession()`.
 
