@@ -110,7 +110,8 @@ Pens: Clean (DM Sans), Breezy (Caveat), Neat (Patrick Hand) and Felt tip (Kalam)
 | Toast | `ui/toast.tsx` | Bottom pill with an optional action, such as Undo |
 | Skeleton | `ui/skeleton.tsx` | Loading placeholders |
 | EntryCard, CategoryCard, HeroPrompt, EmptyState | `journal/*` | Composites from the mock |
-| TemplateStrip, TemplateMenu | `journal/template-picker.tsx` | "Start with" chips on a blank page (hover previews as ghost text) and the toolbar menu |
+| CornerPicker | `journal/corner-picker.tsx` | One pill at the top of the editor page: dashed “Add to a corner” when empty, the corner’s tint once picked. Opens a list with arrow-key support and “New corner”, which picks the corner it makes |
+| TemplateStrip, TemplateMenu | `journal/template-picker.tsx` | “Start from a template” cards on a blank page (emoji, name and a line of what’s inside; hover previews as ghost text) and the toolbar menu |
 | TemplateDialog | `journal/template-dialog.tsx` | List, create and edit templates, with a live preview in the person's paper and pen |
 | Textarea | `ui/field.tsx` | Multi-line input matching `Input` |
 | QuoteFace, QuoteDialog | `journal/quote-card.tsx`, `journal/quote-dialog.tsx` | A quote card on the wall, and the composer with its live preview |
@@ -123,7 +124,7 @@ Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pe
 
 ## Templates
 
-A template is a starting title and a body of prompts. Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template replaces the page’s title and body; if that replaces real writing, a toast offers Undo. A page holding only an untouched template is never saved as an entry.
+A template is a starting title and a body of prompts. Corners and templates must never look alike in the editor: a corner is *where a thought lives* (a single pill, like a setting), and a template is *what fills the page* (cards that look like little pages). Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template replaces the page’s title and body; if that replaces real writing, a toast offers Undo. A page holding only an untouched template is never saved as an entry.
 
 ## Quotes
 

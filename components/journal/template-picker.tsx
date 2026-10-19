@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, type KeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 import { BUILT_IN_TEMPLATES } from "@/lib/templates";
 import type { Template } from "@/lib/types";
 import { Popover } from "@/components/ui/popover";
-import { PlusIcon, TemplateIcon } from "@/components/icons";
+import { CheckIcon, PlusIcon, TemplateIcon } from "@/components/icons";
 import { useJournal } from "./store";
 
 /** The person's own templates first, then the ready-made ones. */
@@ -14,9 +14,17 @@ export function useAllTemplates() {
   return useMemo(() => [...templates, ...BUILT_IN_TEMPLATES], [templates]);
 }
 
+/** The quiet second line on a template card: its description, or else the first prompt in it. */
+function summary(template: Template) {
+  if (template.description) return template.description;
+  const line = template.content.split("\n").find((l) => l.trim());
+  return line?.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ x]\])\s*/, "") || "Your own template";
+}
+
 /**
- * A row of templates across the top of a blank page. Hovering one previews it on the page;
- * picking one fills the page in. It folds away once the writer starts writing.
+ * Cards across the top of a blank page, each a ready-made shape for the page. They look like
+ * little pages with a line of what's inside, so they never read as corner chips. Hovering one
+ * previews it on the page; picking one fills the page in. It folds away once the writer starts.
  */
 export function TemplateStrip({
   show,
@@ -38,99 +46,100 @@ export function TemplateStrip({
 }) {
   const all = useAllTemplates();
 
+  // Left and right walk the row, like the arrow keys in any other picker.
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const cards = [...e.currentTarget.querySelectorAll<HTMLElement>("button")];
+    const at = cards.indexOf(document.activeElement as HTMLElement);
+    if (at === -1) return;
+    e.preventDefault();
+    const next = cards[at + (e.key === "ArrowRight" ? 1 : -1)];
+    next?.focus();
+    next?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  };
+
+  const link =
+    "rounded-md px-1.5 py-0.5 text-xs font-medium text-subtle transition-colors hover:bg-sage-50 hover:text-ink";
+
   return (
     <div
       className={cn(
         "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-soft",
-        show ? "mt-5 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0",
+        show ? "mt-6 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0",
       )}
       inert={!show}
     >
       <div className="min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-eyebrow font-semibold uppercase text-muted">Start with</p>
-          <button
-            type="button"
-            onClick={onManage}
-            className="-mr-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium text-subtle transition-colors hover:bg-sage-50 hover:text-ink"
-          >
-            Manage
-          </button>
+        <div className="flex min-w-0 items-center gap-2">
+          <TemplateIcon size={16} className="shrink-0 text-subtle" />
+          <p className="min-w-0 flex-1 truncate text-[0.82rem] font-medium text-muted">
+            Start from a template
+            <span className="text-subtle max-sm:hidden"> · or just write</span>
+          </p>
+          <div className="-mr-1.5 flex shrink-0 items-center">
+            {activeId && (
+              <button type="button" onClick={onClear} className={cn(link, "animate-fade-in")}>
+                Clear
+              </button>
+            )}
+            <button type="button" onClick={onManage} className={link}>
+              Manage
+            </button>
+          </div>
         </div>
         <div
-          role="radiogroup"
+          role="group"
           aria-label="Templates"
+          onKeyDown={onKeyDown}
           onPointerLeave={() => onPreview(null)}
-          className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 py-1 scrollbar-none mask-[linear-gradient(to_right,transparent,black_0.25rem,black_calc(100%-2rem),transparent)]"
+          className="-mx-1 mt-2.5 flex snap-x scroll-px-1 gap-2 overflow-x-auto px-1 pt-1 pb-2 scrollbar-none mask-[linear-gradient(to_right,transparent,black_0.25rem,black_calc(100%-2.5rem),transparent)]"
         >
-          <Chip selected={activeId === null} onClick={onClear} onPreview={() => onPreview(null)}>
-            Blank
-          </Chip>
-          {all.map((template, i) => (
-            <Chip
-              key={template.id}
-              selected={activeId === template.id}
-              title={template.description || undefined}
-              onClick={() => onApply(template)}
-              onPreview={() => onPreview(template)}
-              onLeave={() => onPreview(null)}
-              style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-            >
-              <span aria-hidden="true">{template.emoji}</span>
-              {template.name}
-            </Chip>
-          ))}
+          {all.map((template, i) => {
+            const selected = activeId === template.id;
+            return (
+              <button
+                key={template.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => (selected ? onClear() : onApply(template))}
+                onPointerEnter={(e) => e.pointerType === "mouse" && onPreview(template)}
+                onFocus={() => onPreview(template)}
+                onBlur={() => onPreview(null)}
+                style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+                className={cn(
+                  "group/card relative flex w-38 shrink-0 animate-fade-in snap-start flex-col items-start rounded-2xl border p-3 text-left transition-[background-color,border-color,transform,box-shadow] duration-200 ease-soft active:scale-[0.98] sm:w-44",
+                  selected
+                    ? "border-sage-300 bg-sage-50 shadow-soft ring-1 ring-sage-300 ring-inset"
+                    : "border-line bg-surface/70 hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface hover:shadow-soft",
+                )}
+              >
+                <span className="flex w-full items-start justify-between">
+                  <span
+                    aria-hidden="true"
+                    className="text-xl leading-none transition-transform duration-200 ease-spring group-hover/card:-rotate-6 group-hover/card:scale-110"
+                  >
+                    {template.emoji}
+                  </span>
+                  {selected && <CheckIcon size={15} className="animate-pop-in text-sage-600" />}
+                </span>
+                <span className="mt-2.5 block w-full truncate text-[0.85rem] font-medium text-ink">
+                  {template.name}
+                </span>
+                <span className="mt-0.5 line-clamp-2 min-h-8 text-xs leading-4 text-subtle">{summary(template)}</span>
+              </button>
+            );
+          })}
           <button
             type="button"
             onClick={onCreate}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-dashed border-line-strong px-3 text-[0.82rem] font-medium text-subtle transition-[color,border-color,background-color] duration-200 hover:border-sage-400 hover:bg-sage-50 hover:text-ink"
+            className="flex w-32 shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-line-strong p-3 text-[0.82rem] font-medium text-subtle transition-[color,border-color,background-color] duration-200 hover:border-sage-400 hover:bg-sage-50 hover:text-ink"
           >
-            <PlusIcon size={14} />
+            <PlusIcon size={18} />
             Make your own
           </button>
         </div>
       </div>
     </div>
-  );
-}
-
-function Chip({
-  selected,
-  onClick,
-  onPreview,
-  onLeave,
-  title,
-  style,
-  children,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  onPreview: () => void;
-  onLeave?: () => void;
-  title?: string;
-  style?: CSSProperties;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      title={title}
-      onClick={onClick}
-      onPointerEnter={(e) => e.pointerType === "mouse" && onPreview()}
-      onFocus={onPreview}
-      onBlur={onLeave}
-      style={style}
-      className={cn(
-        "inline-flex h-9 shrink-0 animate-fade-in items-center gap-1.5 rounded-xl border px-3 text-[0.82rem] font-medium transition-[color,background-color,border-color,transform,box-shadow] duration-200 ease-soft active:scale-[0.97]",
-        selected
-          ? "border-sage-300 bg-sage-100 text-ink shadow-soft"
-          : "border-line bg-surface/70 text-muted hover:-translate-y-0.5 hover:border-line-strong hover:text-ink hover:shadow-soft",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

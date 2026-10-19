@@ -15,7 +15,8 @@ import { TemplateDialog, type TemplateDialogStart } from "./template-dialog";
 import { Topbar } from "./topbar";
 
 type ShellApi = {
-  openCategoryDialog: (category?: Category) => void;
+  /** Edits `category`, or makes a new corner; `onCreated` hears about the new one. */
+  openCategoryDialog: (category?: Category, onCreated?: (category: Category) => void) => void;
   confirmDeleteCategory: (category: Category) => void;
   openProfileDialog: () => void;
   /** Opens the template list, or a template form; `onSaved` hears about what was saved. */
@@ -27,7 +28,11 @@ const ShellContext = createContext<ShellApi | null>(null);
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [dialog, setDialog] = useState<{ open: boolean; category?: Category }>({ open: false });
+  const [dialog, setDialog] = useState<{
+    open: boolean;
+    category?: Category;
+    onCreated?: (category: Category) => void;
+  }>({ open: false });
   const [deleting, setDeleting] = useState<Category>();
   const [profileOpen, setProfileOpen] = useState(false);
   const [templates, setTemplates] = useState<{
@@ -56,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const api = useMemo<ShellApi>(
     () => ({
-      openCategoryDialog: (category) => setDialog({ open: true, category }),
+      openCategoryDialog: (category, onCreated) => setDialog({ open: true, category, onCreated }),
       confirmDeleteCategory: setDeleting,
       openProfileDialog: () => {
         setDrawerOpen(false);
@@ -117,6 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <CategoryDialog
         open={dialog.open}
         category={dialog.category}
+        onCreated={dialog.onCreated}
         onClose={() => setDialog((d) => ({ ...d, open: false }))}
       />
       <DeleteCategoryDialog category={deleting} onClose={() => setDeleting(undefined)} />

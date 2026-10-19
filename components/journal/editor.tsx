@@ -7,14 +7,15 @@ import { cn } from "@/lib/cn";
 import { fullDateTime, wordCount } from "@/lib/format";
 import { toggleFormat, type Format } from "@/lib/inline-format";
 import { bodyLeading, papers, pens } from "@/lib/page-style";
-import { MOODS, palette } from "@/lib/palette";
+import { MOODS } from "@/lib/palette";
 import { fillTemplate, nextBlank } from "@/lib/templates";
 import { isShared, type Entry, type Template, type Visibility } from "@/lib/types";
 import { Button, IconButton } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
-import { ArrowLeftIcon, CheckIcon, HeartIcon, MoreIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { ArrowLeftIcon, CheckIcon, HeartIcon, MoreIcon, TrashIcon } from "@/components/icons";
 import { useShell } from "./app-shell";
+import { CornerPicker } from "./corner-picker";
 import { FormatBackdrop } from "./formatted-text";
 import { PageStyleMenu } from "./page-style-menu";
 import { TemplateMenu, TemplateStrip } from "./template-picker";
@@ -49,7 +50,7 @@ export function Editor({
   defaultCategoryId?: string | null;
 }) {
   const router = useRouter();
-  const { categories, categoryById, profile, createEntry, updateEntry, deleteEntry, timeZone } = useJournal();
+  const { categoryById, profile, createEntry, updateEntry, deleteEntry, timeZone } = useJournal();
   const { openCategoryDialog, openProfileDialog, openTemplates } = useShell();
   const toast = useToast();
 
@@ -395,36 +396,11 @@ export function Editor({
           papers[paper].page,
         )}
       >
-        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
-          {categories.map((category) => {
-            const selected = draft.category_id === category.id;
-            return (
-              <button
-                key={category.id}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => share({ category_id: selected ? null : category.id })}
-                className={cn(
-                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[0.82rem] font-medium transition-all duration-200 ease-soft",
-                  selected
-                    ? cn(palette[category.color].chip, "text-ink ring-1 ring-inset", palette[category.color].ring)
-                    : "text-muted hover:bg-sage-50 hover:text-ink",
-                )}
-              >
-                <span className={cn("transition-[filter]", !selected && "grayscale-[60%]")}>{category.emoji}</span>
-                {category.name}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => openCategoryDialog()}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[0.82rem] text-subtle transition-colors hover:bg-sage-50 hover:text-ink"
-          >
-            <PlusIcon size={14} />
-            New
-          </button>
-        </div>
+        <CornerPicker
+          value={corner}
+          onChange={(category_id) => share({ category_id })}
+          onCreate={() => openCategoryDialog(undefined, (created) => share({ category_id: created.id }))}
+        />
 
         <textarea
           ref={titleRef}
@@ -441,7 +417,7 @@ export function Editor({
           placeholder={previewed?.title || "Give it a little title"}
           aria-label="Title"
           className={cn(
-            "mt-6 block w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
+            "mt-5 block w-full resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-faint",
             pens[pen].title,
           )}
         />
