@@ -127,10 +127,10 @@ A template is a starting title and a body of prompts. Ready-made ones live in `l
 
 ## Quotes
 
-The quote wall is an endless dot-grid canvas. Cards are 248 canvas units wide, tinted with a corner palette, and carry a large “ in the palette's dot color. Each one tilts slightly (`quoteTilt`, seeded by its id) and straightens on hover, focus and drag. Text size steps down as quotes get longer.
+The quote wall is an endless dot-grid canvas. Cards are 248 canvas units wide at their natural size and tinted with a corner palette. Each one tilts slightly (`quoteTilt`, seeded by its id) and straightens on hover, focus and drag. Text size steps down as quotes get longer. The ⋯ menu and the resize corner only appear on hover or when the card is selected, so they never cover the words, and they stay a steady size on screen however big the quote is.
 
-- **Pointer:** drag a card to move it (it comes to the front), drag the wall to pan, pinch or ⌘/ctrl + scroll to zoom (30–200%), and double-click or double-tap the empty wall to pin a quote right there.
-- **Keyboard:** Tab through quotes (the wall glides to one that's out of view). Arrow keys nudge it (Shift moves it further), Enter edits, Delete takes it down with Undo. N adds a quote, + / − zoom, and 0 fits everything in view.
+- **Pointer:** drag a card to move it (it comes to the front), drag its bottom-right corner to resize it (0.5–3×, saved as `quotes.scale`), drag the wall to pan, pinch or ⌘/ctrl + scroll to zoom (30–200%), and double-click or double-tap the empty wall to pin a quote right there.
+- **Keyboard:** Tab through quotes (the wall glides to one that's out of view). Arrow keys nudge it (Shift moves it further), [ and ] resize it, Enter edits, Delete takes it down with Undo. N adds a quote, + / − zoom, and 0 fits everything in view.
 - Button-driven view changes glide with `ease-soft`; gestures follow the pointer exactly.
 
 ## Formatting

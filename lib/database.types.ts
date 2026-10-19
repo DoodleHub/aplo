@@ -56,6 +56,7 @@ type QuoteRow = {
   x: number;
   y: number;
   z: number;
+  scale: number;
   created_at: string;
   updated_at: string;
 };

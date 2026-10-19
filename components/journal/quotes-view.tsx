@@ -12,7 +12,7 @@ import {
   type PointerEvent,
 } from "react";
 import { cn } from "@/lib/cn";
-import { CATEGORY_COLORS, type Quote, type QuoteInput } from "@/lib/types";
+import { CATEGORY_COLORS, type Quote, type QuoteInput, type QuotePatch } from "@/lib/types";
 import { Button, IconButton } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
@@ -40,8 +40,16 @@ const NUDGE = 12;
 const NUDGE_FAR = 60;
 /** A card's height before it has been measured, in canvas units. */
 const FALLBACK_HEIGHT = 160;
+/** How small or large a quote can be, as a multiple of its natural size. */
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 3;
+/** How much [ and ] resize a quote. */
+const SCALE_STEP = 0.1;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+/** Older device copies have no size yet. */
+const scaleOf = (quote: Quote) => quote.scale ?? 1;
 
 /** Where a pointer is, in px from the element's top-left corner. */
 function pointIn(element: HTMLElement, e: { clientX: number; clientY: number }): Point {
@@ -60,12 +68,26 @@ function zoomAround(view: View, at: Point, zoom: number): View {
 type Gesture =
   | { kind: "pan"; pointerId: number; start: Point; from: View }
   | { kind: "card"; pointerId: number; id: string; start: Point; origin: Point; moved: boolean }
+  | {
+      kind: "resize";
+      pointerId: number;
+      id: string;
+      start: Point;
+      /** The card's top-left corner and natural size, in canvas units. */
+      corner: Point;
+      size: { width: number; height: number };
+      scale: number;
+      moved: boolean;
+    }
   | { kind: "pinch"; distance: number; mid: Point; from: View };
+
+/** A card mid-gesture: where it's being dragged to, or how big it's being made. */
+type Live = { id: string; x?: number; y?: number; scale?: number };
 
 type Composer = { open: boolean; quote?: Quote; at?: Point };
 
 export function QuotesView() {
-  const { quotes, user, createQuote, updateQuote, deleteQuote } = useJournal();
+  const { quotes, createQuote, updateQuote, deleteQuote } = useJournal();
   const toast = useToast();
   const viewportRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, zoom: 1 });
@@ -73,14 +95,13 @@ export function QuotesView() {
   // Button and keyboard moves glide; pointer gestures follow the finger exactly.
   const [smooth, setSmooth] = useState(false);
   const [ready, setReady] = useState(false);
-  const [drag, setDrag] = useState<{ id: string } & Point>();
+  const [live, setLive] = useState<Live>();
   const [composer, setComposer] = useState<Composer>({ open: false });
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<Gesture | null>(null);
   const lastTap = useRef<{ time: number; at: Point; id: string | null } | null>(null);
   const initialized = useRef(false);
   const smoothTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const storageKey = `aplo:quote-wall:${user.id}`;
 
   const apply = useCallback((next: View, glide = false) => {
     viewRef.current = next;
@@ -104,10 +125,11 @@ export function QuotesView() {
     for (const card of cards) {
       const x = Number(card.dataset.x);
       const y = Number(card.dataset.y);
+      const scale = Number(card.dataset.scale) || 1;
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + QUOTE_WIDTH);
-      maxY = Math.max(maxY, y + (card.offsetHeight || FALLBACK_HEIGHT));
+      maxX = Math.max(maxX, x + QUOTE_WIDTH * scale);
+      maxY = Math.max(maxY, y + (card.offsetHeight || FALLBACK_HEIGHT) * scale);
     }
     const zoom = clamp(
       Math.min((width - FIT_PADDING * 2) / (maxX - minX), (height - FIT_PADDING * 2) / (maxY - minY)),
@@ -117,33 +139,18 @@ export function QuotesView() {
     return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
   }, []);
 
-  // Open where this person left the wall, or with everything in view. A ref callback runs
-  // once the cards are in the DOM to be measured, and before the first paint.
+  // Always open with every quote in view. A ref callback runs once the cards are in the DOM
+  // to be measured, and before the first paint.
   const attachViewport = useCallback(
     (viewport: HTMLDivElement | null) => {
       viewportRef.current = viewport;
       if (!viewport || initialized.current) return;
       initialized.current = true;
-      let saved: View | undefined;
-      try {
-        const parsed = JSON.parse(localStorage.getItem(storageKey) ?? "null");
-        if (parsed && [parsed.x, parsed.y, parsed.zoom].every(Number.isFinite)) saved = parsed;
-      } catch {}
-      apply(saved ? { ...saved, zoom: clamp(saved.zoom, MIN_ZOOM, MAX_ZOOM) } : fitView());
+      apply(fitView());
       setReady(true);
     },
-    [storageKey, apply, fitView],
+    [apply, fitView],
   );
-
-  useEffect(() => {
-    if (!ready) return;
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(view));
-      } catch {}
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [ready, storageKey, view]);
 
   // Keep the middle of the wall in the middle when the viewport changes size (rotation, sidebar).
   useEffect(() => {
@@ -273,7 +280,7 @@ export function QuotesView() {
     if (pointers.current.size === 2) {
       // A second finger turns whatever was happening into a pinch.
       const [a, b] = [...pointers.current.values()];
-      setDrag(undefined);
+      setLive(undefined);
       gesture.current = {
         kind: "pinch",
         distance: Math.hypot(a.x - b.x, a.y - b.y),
@@ -286,9 +293,22 @@ export function QuotesView() {
 
     const card = target.closest<HTMLElement>("[data-quote-id]");
     const quote = card && quotes.find((q) => q.id === card.dataset.quoteId);
-    gesture.current = quote
-      ? { kind: "card", pointerId: e.pointerId, id: quote.id, start: at, origin: { x: quote.x, y: quote.y }, moved: false }
-      : { kind: "pan", pointerId: e.pointerId, start: at, from: viewRef.current };
+    if (!quote) {
+      gesture.current = { kind: "pan", pointerId: e.pointerId, start: at, from: viewRef.current };
+    } else if (target.closest("[data-resize-handle]")) {
+      gesture.current = {
+        kind: "resize",
+        pointerId: e.pointerId,
+        id: quote.id,
+        start: at,
+        corner: { x: quote.x, y: quote.y },
+        size: { width: QUOTE_WIDTH, height: card.offsetHeight || FALLBACK_HEIGHT },
+        scale: scaleOf(quote),
+        moved: false,
+      };
+    } else {
+      gesture.current = { kind: "card", pointerId: e.pointerId, id: quote.id, start: at, origin: { x: quote.x, y: quote.y }, moved: false };
+    }
   };
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
@@ -317,8 +337,19 @@ export function QuotesView() {
     }
     if (!g.moved && Math.hypot(dx, dy) < TAP_SLOP) return;
     g.moved = true;
+
+    if (g.kind === "resize") {
+      // Project the pointer onto the card's diagonal, so the corner tracks it and the
+      // card keeps its shape.
+      const p = toCanvas(at);
+      const { width, height } = g.size;
+      const along = ((p.x - g.corner.x) * width + (p.y - g.corner.y) * height) / (width * width + height * height);
+      g.scale = clamp(along, MIN_SCALE, MAX_SCALE);
+      setLive({ id: g.id, scale: g.scale });
+      return;
+    }
     const zoom = viewRef.current.zoom;
-    setDrag({ id: g.id, x: g.origin.x + dx / zoom, y: g.origin.y + dy / zoom });
+    setLive({ id: g.id, x: g.origin.x + dx / zoom, y: g.origin.y + dy / zoom });
   };
 
   const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
@@ -338,9 +369,17 @@ export function QuotesView() {
     if (!g || e.pointerId !== g.pointerId) return;
     gesture.current = null;
 
+    if (g.kind === "resize") {
+      const quote = quotes.find((q) => q.id === g.id);
+      setLive(undefined);
+      lastTap.current = null;
+      if (quote && g.moved && !cancelled) updateQuote(quote.id, { scale: g.scale, ...raise(quote) });
+      return;
+    }
+
     if (g.kind === "card") {
       const quote = quotes.find((q) => q.id === g.id);
-      setDrag(undefined);
+      setLive(undefined);
       if (!quote) return;
       if (g.moved) {
         if (cancelled) return;
@@ -406,6 +445,12 @@ export function QuotesView() {
         updateQuote(quote.id, { x: quote.x + move.x, y: quote.y + move.y, ...raise(quote) });
         return;
       }
+      if (e.key === "[" || e.key === "]") {
+        e.preventDefault();
+        const scale = clamp(scaleOf(quote) + (e.key === "]" ? SCALE_STEP : -SCALE_STEP), MIN_SCALE, MAX_SCALE);
+        if (scale !== scaleOf(quote)) updateQuote(quote.id, { scale, ...raise(quote) });
+        return;
+      }
       if (e.key === "Enter") {
         e.preventDefault();
         openEdit(quote);
@@ -439,19 +484,21 @@ export function QuotesView() {
     if (!quote || gesture.current) return;
     const viewport = e.currentTarget;
     const v = viewRef.current;
-    const height = (e.target as HTMLElement).offsetHeight;
+    const scale = scaleOf(quote);
+    const width = QUOTE_WIDTH * scale;
+    const height = (e.target as HTMLElement).offsetHeight * scale;
     const left = quote.x * v.zoom + v.x;
     const top = quote.y * v.zoom + v.y;
     const visible =
       left >= 0 &&
       top >= 0 &&
-      left + QUOTE_WIDTH * v.zoom <= viewport.clientWidth &&
+      left + width * v.zoom <= viewport.clientWidth &&
       top + height * v.zoom <= viewport.clientHeight;
     if (visible) return;
     apply(
       {
         ...v,
-        x: viewport.clientWidth / 2 - (quote.x + QUOTE_WIDTH / 2) * v.zoom,
+        x: viewport.clientWidth / 2 - (quote.x + width / 2) * v.zoom,
         y: viewport.clientHeight / 2 - (quote.y + height / 2) * v.zoom,
       },
       true,
@@ -511,8 +558,8 @@ export function QuotesView() {
           }}
         >
           <p id="quote-wall-help" className="sr-only">
-            Drag the wall to look around and drag a quote to move it. With a quote selected, arrow keys move it, Enter
-            edits it and Delete takes it down. Press N for a new quote, plus or minus to zoom, and 0 to see everything.
+            Drag the wall to look around and drag a quote to move it. With a quote selected, arrow keys move it, [ and ]
+            make it smaller or bigger, Enter edits it and Delete takes it down. Press N for a new quote, plus or minus to zoom, and 0 to see everything.
           </p>
 
           <div
@@ -521,16 +568,22 @@ export function QuotesView() {
               ready ? "opacity-100" : "opacity-0",
               smooth ? "transition-[transform,opacity] duration-300 ease-soft" : "transition-opacity duration-300",
             )}
-            style={{ transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.zoom})` }}
+            style={
+              {
+                transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.zoom})`,
+                "--zoom": view.zoom,
+              } as CSSProperties
+            }
           >
             {quotes.map((quote, i) => (
               <QuoteCard
                 key={quote.id}
                 quote={quote}
                 index={i}
-                dragging={drag?.id === quote.id ? drag : undefined}
+                live={live?.id === quote.id ? live : undefined}
                 onEdit={openEdit}
                 onCopy={copy}
+                onUpdate={updateQuote}
                 onDelete={deleteQuote}
               />
             ))}
@@ -579,28 +632,46 @@ export function QuotesView() {
   );
 }
 
+// Card controls stay a steady size on screen however big the quote is, and only shrink a
+// little when zoomed out.
+const steadyScale = "clamp(0.3, calc(1 / (var(--s) * max(var(--zoom), 0.6))), 3)";
+
+// Hidden until the card is hovered or selected, so they never sit over the words.
+const revealed =
+  "invisible opacity-0 transition-[opacity,visibility] duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100";
+
 const QuoteCard = memo(function QuoteCard({
   quote,
   index,
-  dragging,
+  live,
   onEdit,
   onCopy,
+  onUpdate,
   onDelete,
 }: {
   quote: Quote;
   /** Position in the list, to stagger the entrance. */
   index: number;
-  /** Where the card is being dragged to, while it is. */
-  dragging?: Point;
+  /** Where the card is being dragged to, or how big it's being made, while it is. */
+  live?: Live;
   onEdit: (quote: Quote) => void;
   onCopy: (quote: Quote) => void;
+  onUpdate: (id: string, patch: QuotePatch) => void;
   onDelete: (id: string) => void;
 }) {
-  const at = dragging ?? quote;
+  const x = live?.x ?? quote.x;
+  const y = live?.y ?? quote.y;
+  const scale = live?.scale ?? scaleOf(quote);
   return (
     <div
-      className={cn("absolute top-0 left-0", !dragging && "transition-transform duration-200 ease-soft")}
-      style={{ transform: `translate3d(${at.x}px, ${at.y}px, 0)`, zIndex: dragging ? 1_000_000 : quote.z }}
+      className={cn("absolute top-0 left-0 origin-top-left", !live && "transition-transform duration-200 ease-soft")}
+      style={
+        {
+          transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
+          zIndex: live ? 1_000_000 : quote.z,
+          "--s": scale,
+        } as CSSProperties
+      }
     >
       <div className="animate-pop-in" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
         <QuoteFace
@@ -608,34 +679,60 @@ const QuoteCard = memo(function QuoteCard({
           data-quote-id={quote.id}
           data-x={quote.x}
           data-y={quote.y}
+          data-scale={scaleOf(quote)}
           tabIndex={0}
           aria-roledescription="movable quote"
           aria-describedby="quote-wall-help"
           style={{ "--tilt": `${quoteTilt(quote.id)}deg` } as CSSProperties}
           className={cn(
             "group outline-none transition-[rotate,scale,box-shadow] duration-300 ease-soft focus-visible:ring-2 focus-visible:ring-sage-400 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
-            dragging
-              ? "scale-[1.04] rotate-0 cursor-grabbing shadow-pop"
-              : "rotate-(--tilt) cursor-grab shadow-soft hover:rotate-0 hover:shadow-lift focus-visible:rotate-0",
+            live
+              ? "scale-[1.03] rotate-0 shadow-pop"
+              : "rotate-(--tilt) shadow-soft hover:rotate-0 hover:shadow-lift focus-visible:rotate-0",
+            live?.scale !== undefined ? "cursor-nwse-resize" : live ? "cursor-grabbing" : "cursor-grab",
           )}
           action={
-            <Menu
-              className="absolute top-2 right-2"
-              items={[
-                { label: "Edit", icon: <PencilIcon size={17} />, onSelect: () => onEdit(quote) },
-                { label: "Copy text", icon: <CopyIcon size={17} />, onSelect: () => onCopy(quote) },
-                { label: "Take down", icon: <TrashIcon size={17} />, tone: "danger", onSelect: () => onDelete(quote.id) },
-              ]}
-              trigger={(props) => (
-                <IconButton
-                  {...props}
-                  label="Quote options"
-                  className="h-8 w-8 text-subtle opacity-0 transition-[opacity,background-color] group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-surface/60 aria-expanded:opacity-100 pointer-coarse:opacity-100"
-                >
-                  <MoreIcon size={18} />
-                </IconButton>
-              )}
-            />
+            <>
+              <span className="absolute top-1.5 right-1.5 origin-top-right" style={{ scale: steadyScale }}>
+                <Menu
+                  items={[
+                    { label: "Edit", icon: <PencilIcon size={17} />, onSelect: () => onEdit(quote) },
+                    { label: "Copy text", icon: <CopyIcon size={17} />, onSelect: () => onCopy(quote) },
+                    ...(scaleOf(quote) !== 1
+                      ? [{ label: "Original size", icon: <FitIcon size={17} />, onSelect: () => onUpdate(quote.id, { scale: 1 }) }]
+                      : []),
+                    { label: "Take down", icon: <TrashIcon size={17} />, tone: "danger" as const, onSelect: () => onDelete(quote.id) },
+                  ]}
+                  trigger={(props) => (
+                    <IconButton
+                      {...props}
+                      label="Quote options"
+                      className={cn(
+                        "h-8 w-8 bg-surface/75 shadow-soft backdrop-blur-sm aria-expanded:visible aria-expanded:opacity-100",
+                        revealed,
+                      )}
+                    >
+                      <MoreIcon size={18} />
+                    </IconButton>
+                  )}
+                />
+              </span>
+              <span
+                data-resize-handle
+                aria-hidden="true"
+                title="Drag to resize"
+                className={cn(
+                  "absolute -right-1 -bottom-1 flex h-9 w-9 origin-bottom-right cursor-nwse-resize items-end justify-end p-2 text-ink-soft",
+                  revealed,
+                  live?.scale !== undefined && "visible opacity-100",
+                )}
+                style={{ scale: steadyScale }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <path d="M11 4 4 11M11 8.5 8.5 11" />
+                </svg>
+              </span>
+            </>
           }
         />
       </div>

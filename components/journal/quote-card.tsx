@@ -37,15 +37,9 @@ export function QuoteFace({
   const author = quote.author.trim();
   return (
     <figure
-      className={cn("relative w-62 rounded-2xl border px-5 pt-4 pb-5", palette[quote.color].card, className)}
+      className={cn("relative w-62 rounded-2xl border p-5", palette[quote.color].card, className)}
       {...props}
     >
-      <span
-        aria-hidden="true"
-        className={cn("block h-7 font-display text-[3.4rem] leading-[0.95] font-semibold select-none", palette[quote.color].mark)}
-      >
-        “
-      </span>
       <blockquote
         className={cn(
           "font-display font-medium tracking-[-0.015em] whitespace-pre-line wrap-break-word",

@@ -62,12 +62,14 @@ export type Quote = {
   y: number;
   /** Stacking order: higher sits on top. */
   z: number;
+  /** Size on the wall, from 0.5 to 3 times natural. Missing in snapshots saved before resizing. */
+  scale: number;
   created_at: string;
   updated_at: string;
 };
 
 export type QuoteInput = Pick<Quote, "text" | "author" | "color">;
-export type QuotePatch = Partial<Pick<Quote, "text" | "author" | "color" | "x" | "y" | "z">>;
+export type QuotePatch = Partial<Pick<Quote, "text" | "author" | "color" | "x" | "y" | "z" | "scale">>;
 
 export const PAPERS = ["plain", "ruled", "dotted", "parchment"] as const;
 export type Paper = (typeof PAPERS)[number];

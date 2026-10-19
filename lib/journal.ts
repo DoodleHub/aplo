@@ -31,7 +31,7 @@ export async function getJournal() {
       .order("created_at"),
     supabase
       .from("quotes")
-      .select("id, text, author, color, x, y, z, created_at, updated_at")
+      .select("id, text, author, color, x, y, z, scale, created_at, updated_at")
       .order("created_at"),
     supabase.from("profiles").select("display_name, emoji, paper, pen").maybeSingle(),
     cookies(),

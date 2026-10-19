@@ -70,7 +70,7 @@ supabase/migrations/ the schema, in order
   - Visibility: an entry is `inherit` (follows its corner), `public` or `private`. Decide with `isShared()`; don't reimplement it.
   - Discover reads go only through the `discover_feed` / `discover_entry` RPCs. People appear by pen name and emoji, never by email.
   - Favorites: your own thoughts use `entries.is_favorite`; other people’s shared thoughts go in `discover_favorites` (written straight to Supabase, not the outbox, since Discover is online-only) and are listed with the `discover_favorite_feed` RPC. Authors never see who favorited them.
-- **Quotes:** a wall of quotes (`components/journal/quotes-view.tsx`) people can pan, zoom and arrange by dragging. Each quote stores its text, author, color and `x`/`y`/`z` on the canvas in `public.quotes`, and syncs through the outbox like templates. The pan and zoom are remembered per device in `localStorage`.
+- **Quotes:** a wall of quotes (`components/journal/quotes-view.tsx`) people can pan, zoom and arrange by dragging. Each quote stores its text, author, color and `x`/`y`/`z` on the canvas in `public.quotes`, and syncs through the outbox like templates. The wall always opens with every quote in view.
 - **Theme:** light, dark or system. It's set on `<html data-theme>` before first paint (`lib/theme.ts`). Dark mode uses the `dark:` variant and redefined tokens in `globals.css`.
 - **PWA and offline:**
   - `sw.js` serves assets cache-first and pages and RSC data network-first.

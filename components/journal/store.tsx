@@ -451,6 +451,7 @@ export function JournalProvider({
         x: Math.round(at.x),
         y: Math.round(at.y),
         z: Math.max(0, ...quotes.map((q) => q.z)) + 1,
+        scale: 1,
         created_at: stamp,
         updated_at: stamp,
       };
@@ -477,6 +478,7 @@ export function JournalProvider({
         ...(input.author !== undefined && { author: input.author.trim() }),
         ...(input.x !== undefined && { x: Math.round(input.x) }),
         ...(input.y !== undefined && { y: Math.round(input.y) }),
+        ...(input.scale !== undefined && { scale: Math.round(input.scale * 100) / 100 }),
       };
       setQuotes((all) => all.map((q) => (q.id === id ? { ...q, ...patch, updated_at: new Date().toISOString() } : q)));
       sync
