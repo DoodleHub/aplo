@@ -47,6 +47,19 @@ type TemplateRow = {
   updated_at: string;
 };
 
+type QuoteRow = {
+  id: string;
+  user_id: string;
+  text: string;
+  author: string;
+  color: CategoryColor;
+  x: number;
+  y: number;
+  z: number;
+  created_at: string;
+  updated_at: string;
+};
+
 type DiscoverFavoriteRow = {
   user_id: string;
   entry_id: string;
@@ -74,6 +87,12 @@ export type Database = {
         Row: TemplateRow;
         Insert: Insert<TemplateRow, "name">;
         Update: Partial<TemplateRow>;
+        Relationships: [];
+      };
+      quotes: {
+        Row: QuoteRow;
+        Insert: Insert<QuoteRow, "text">;
+        Update: Partial<QuoteRow>;
         Relationships: [];
       };
       discover_favorites: {

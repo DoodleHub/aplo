@@ -13,7 +13,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 }
 
 async function Journal({ children }: { children: ReactNode }) {
-  const { user, profile, categories, entries, templates, timeZone } = await getJournal();
+  const { user, profile, categories, entries, templates, quotes, timeZone } = await getJournal();
   return (
     <JournalProvider
       user={user}
@@ -21,6 +21,7 @@ async function Journal({ children }: { children: ReactNode }) {
       initialCategories={categories}
       initialEntries={entries}
       initialTemplates={templates}
+      initialQuotes={quotes}
       initialTimeZone={timeZone}
       now={new Date().toISOString()}
     >

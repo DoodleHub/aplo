@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import type { Category, Entry, Profile, Template } from "@/lib/types";
+import type { Category, Entry, Profile, Quote, Template } from "@/lib/types";
 
 /** Everything the journal UI needs for the signed-in user, in one round trip. */
 export async function getJournal() {
@@ -14,7 +14,7 @@ export async function getJournal() {
   const claims = claimsData?.claims;
   if (!claims) redirect("/login");
 
-  const [categories, entries, templates, profile, cookieStore] = await Promise.all([
+  const [categories, entries, templates, quotes, profile, cookieStore] = await Promise.all([
     supabase
       .from("categories")
       .select("id, name, emoji, color, description, is_public, position, created_at")
@@ -29,6 +29,10 @@ export async function getJournal() {
       .from("templates")
       .select("id, name, emoji, description, title, content, created_at, updated_at")
       .order("created_at"),
+    supabase
+      .from("quotes")
+      .select("id, text, author, color, x, y, z, created_at, updated_at")
+      .order("created_at"),
     supabase.from("profiles").select("display_name, emoji, paper, pen").maybeSingle(),
     cookies(),
   ]);
@@ -38,12 +42,15 @@ export async function getJournal() {
   if (profile.error) throw profile.error;
   // Templates are a nicety: if they can't load, the journal still opens with the built-in ones.
   if (templates.error) console.error("Couldn't load templates", templates.error);
+  // Same for the quote wall: it shouldn't keep anyone from their journal.
+  if (quotes.error) console.error("Couldn't load quotes", quotes.error);
 
   return {
     user: { id: claims.sub, email: (claims.email as string | undefined) ?? "" },
     categories: categories.data as Category[],
     entries: entries.data as Entry[],
     templates: (templates.data ?? []) as Template[],
+    quotes: (quotes.data ?? []) as Quote[],
     // Every account gets one on sign-up; this only covers a profile that's somehow missing.
     profile: (profile.data ?? { display_name: "A quiet soul", emoji: "🌿", paper: "plain", pen: "sans" }) satisfies Profile,
     timeZone: safeTimeZone(cookieStore.get("tz")?.value),

@@ -113,6 +113,7 @@ Pens: Clean (DM Sans), Breezy (Caveat), Neat (Patrick Hand) and Felt tip (Kalam)
 | TemplateStrip, TemplateMenu | `journal/template-picker.tsx` | "Start with" chips on a blank page (hover previews as ghost text) and the toolbar menu |
 | TemplateDialog | `journal/template-dialog.tsx` | List, create and edit templates, with a live preview in the person's paper and pen |
 | Textarea | `ui/field.tsx` | Multi-line input matching `Input` |
+| QuoteFace, QuoteDialog | `journal/quote-card.tsx`, `journal/quote-dialog.tsx` | A quote card on the wall, and the composer with its live preview |
 | VisibilityMenu, Avatar | `journal/visibility-menu.tsx`, `journal/profile-dialog.tsx` | Sharing control and the pen-name avatar |
 
 ## Sharing
@@ -123,6 +124,14 @@ Shared things show a `GlobeIcon`, private ones a `LockIcon`. People appear by pe
 ## Templates
 
 A template is a starting title and a body of prompts. Ready-made ones live in `lib/templates.ts`; people's own are in `public.templates` and sync through the outbox like everything else. `{date}`, `{weekday}` and `{time}` fill in when a template is used. A list marker left empty (`- `, `1. `, `[ ] `) or the empty line under a heading is a *blank*: the cursor lands on the first one, and Tab moves to the next. Using a template replaces the page’s title and body; if that replaces real writing, a toast offers Undo. A page holding only an untouched template is never saved as an entry.
+
+## Quotes
+
+The quote wall is an endless dot-grid canvas. Cards are 248 canvas units wide, tinted with a corner palette, and carry a large “ in the palette's dot color. Each one tilts slightly (`quoteTilt`, seeded by its id) and straightens on hover, focus and drag. Text size steps down as quotes get longer.
+
+- **Pointer:** drag a card to move it (it comes to the front), drag the wall to pan, pinch or ⌘/ctrl + scroll to zoom (30–200%), and double-click or double-tap the empty wall to pin a quote right there.
+- **Keyboard:** Tab through quotes (the wall glides to one that's out of view). Arrow keys nudge it (Shift moves it further), Enter edits, Delete takes it down with Undo. N adds a quote, + / − zoom, and 0 fits everything in view.
+- Button-driven view changes glide with `ease-soft`; gestures follow the pointer exactly.
 
 ## Formatting
 

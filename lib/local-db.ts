@@ -4,9 +4,9 @@
  * Everything here is best-effort — if IndexedDB is unavailable (e.g. some private
  * windows), reads come back empty and writes are skipped.
  */
-import type { Category, Entry, Template } from "@/lib/types";
+import type { Category, Entry, Quote, Template } from "@/lib/types";
 
-export type Table = "entries" | "categories" | "profiles" | "templates";
+export type Table = "entries" | "categories" | "profiles" | "templates" | "quotes";
 
 export type WriteOp = { opId: string; userId: string; table: Table } & (
   | { kind: "upsert"; row: Record<string, unknown> & { id: string } }
@@ -22,6 +22,8 @@ export type Snapshot = {
   entries: Entry[];
   /** Missing from snapshots saved before templates existed. */
   templates?: Template[];
+  /** Missing from snapshots saved before the quote wall existed. */
+  quotes?: Quote[];
 };
 
 const DB_NAME = "aplo";
@@ -131,10 +133,10 @@ export async function clearDeviceCopy(userId: string) {
 
 /** Applies queued writes on top of server data, so unsynced changes show after a reload. */
 export function applyOps(
-  data: { categories: Category[]; entries: Entry[]; templates: Template[] },
+  data: { categories: Category[]; entries: Entry[]; templates: Template[]; quotes: Quote[] },
   ops: WriteOp[],
-): { categories: Category[]; entries: Entry[]; templates: Template[] } {
-  let { categories, entries, templates } = data;
+): { categories: Category[]; entries: Entry[]; templates: Template[]; quotes: Quote[] } {
+  let { categories, entries, templates, quotes } = data;
   for (const op of ops) {
     if (op.table === "profiles") {
       continue;
@@ -142,6 +144,8 @@ export function applyOps(
       entries = applyOp(entries, op);
     } else if (op.table === "templates") {
       templates = applyOp(templates, op);
+    } else if (op.table === "quotes") {
+      quotes = applyOp(quotes, op);
     } else {
       categories = applyOp(categories, op);
       if (op.kind === "delete") {
@@ -149,7 +153,7 @@ export function applyOps(
       }
     }
   }
-  return { categories, entries, templates };
+  return { categories, entries, templates, quotes };
 }
 
 function applyOp<T extends { id: string }>(rows: T[], op: WriteOp): T[] {

@@ -20,6 +20,7 @@ import {
   LogoutIcon,
   PencilIcon,
   PlusIcon,
+  QuoteIcon,
 } from "@/components/icons";
 import { useShell } from "./app-shell";
 import { CategoryMenu } from "./category-actions";
@@ -42,6 +43,7 @@ export function Sidebar({
     countByCategory,
     unsortedCount,
     entries,
+    quotes,
     user,
     profile,
     pendingWrites,
@@ -85,6 +87,15 @@ export function Sidebar({
           onNavigate={onNavigate}
         >
           Discover
+        </NavItem>
+        <NavItem
+          href="/quotes"
+          active={pathname === "/quotes"}
+          icon={<QuoteIcon size={18} />}
+          onNavigate={onNavigate}
+          trailing={quotes.length > 0 ? quotes.length : undefined}
+        >
+          Quotes
         </NavItem>
       </nav>
 

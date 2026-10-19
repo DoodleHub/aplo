@@ -50,6 +50,25 @@ export type Template = {
 
 export type TemplateInput = Pick<Template, "name" | "emoji" | "description" | "title" | "content">;
 
+/** Words worth keeping, pinned somewhere on the quote wall. */
+export type Quote = {
+  id: string;
+  text: string;
+  /** Who said it; "" when unknown. */
+  author: string;
+  color: CategoryColor;
+  /** Top-left corner on the wall, in canvas units. */
+  x: number;
+  y: number;
+  /** Stacking order: higher sits on top. */
+  z: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuoteInput = Pick<Quote, "text" | "author" | "color">;
+export type QuotePatch = Partial<Pick<Quote, "text" | "author" | "color" | "x" | "y" | "z">>;
+
 export const PAPERS = ["plain", "ruled", "dotted", "parchment"] as const;
 export type Paper = (typeof PAPERS)[number];
 

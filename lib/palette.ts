@@ -3,7 +3,7 @@ import type { CategoryColor } from "./types";
 // Literal class names so Tailwind can see them.
 export const palette: Record<
   CategoryColor,
-  { label: string; card: string; chip: string; dot: string; ring: string }
+  { label: string; card: string; chip: string; dot: string; ring: string; mark: string }
 > = {
   sage: {
     label: "Sage",
@@ -11,6 +11,7 @@ export const palette: Record<
     chip: "bg-cat-sage-chip",
     dot: "bg-cat-sage-dot",
     ring: "ring-cat-sage-dot",
+    mark: "text-cat-sage-dot",
   },
   sand: {
     label: "Sand",
@@ -18,6 +19,7 @@ export const palette: Record<
     chip: "bg-cat-sand-chip",
     dot: "bg-cat-sand-dot",
     ring: "ring-cat-sand-dot",
+    mark: "text-cat-sand-dot",
   },
   lilac: {
     label: "Lilac",
@@ -25,6 +27,7 @@ export const palette: Record<
     chip: "bg-cat-lilac-chip",
     dot: "bg-cat-lilac-dot",
     ring: "ring-cat-lilac-dot",
+    mark: "text-cat-lilac-dot",
   },
   sky: {
     label: "Sky",
@@ -32,6 +35,7 @@ export const palette: Record<
     chip: "bg-cat-sky-chip",
     dot: "bg-cat-sky-dot",
     ring: "ring-cat-sky-dot",
+    mark: "text-cat-sky-dot",
   },
   rose: {
     label: "Rose",
@@ -39,6 +43,7 @@ export const palette: Record<
     chip: "bg-cat-rose-chip",
     dot: "bg-cat-rose-dot",
     ring: "ring-cat-rose-dot",
+    mark: "text-cat-rose-dot",
   },
   stone: {
     label: "Stone",
@@ -46,6 +51,7 @@ export const palette: Record<
     chip: "bg-cat-stone-chip",
     dot: "bg-cat-stone-dot",
     ring: "ring-cat-stone-dot",
+    mark: "text-cat-stone-dot",
   },
 };
 

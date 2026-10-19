@@ -209,3 +209,24 @@ export const CopyIcon = (p: IconProps) => (
     <path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8" />
   </Icon>
 );
+
+/** Two soft quotation marks: the quote wall. */
+export const QuoteIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M10 7.5c-2.8.9-4.5 3-4.5 6v3a1.5 1.5 0 0 0 1.5 1.5h2A1.5 1.5 0 0 0 10.5 16.5v-2a1.5 1.5 0 0 0-1.5-1.5H5.6" />
+    <path d="M18.5 7.5c-2.8.9-4.5 3-4.5 6v3a1.5 1.5 0 0 0 1.5 1.5h2a1.5 1.5 0 0 0 1.5-1.5v-2a1.5 1.5 0 0 0-1.5-1.5h-3.4" />
+  </Icon>
+);
+
+export const MinusIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 12h14" />
+  </Icon>
+);
+
+/** Four corners pulling in: fit everything in view. */
+export const FitIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3" />
+  </Icon>
+);

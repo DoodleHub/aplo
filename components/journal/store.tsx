@@ -21,6 +21,9 @@ import type {
   Entry,
   EntryPatch,
   Profile,
+  Quote,
+  QuoteInput,
+  QuotePatch,
   Template,
   TemplateInput,
   WritingStyle,
@@ -39,6 +42,8 @@ type JournalApi = {
   entries: Entry[];
   /** The person's own templates, oldest first. Built-in ones live in lib/templates.ts. */
   templates: Template[];
+  /** Everything on the quote wall, oldest first. */
+  quotes: Quote[];
   /** Writes not yet confirmed by the server, e.g. made while offline. */
   pendingWrites: number;
   categoryById: Map<string, Category>;
@@ -57,6 +62,10 @@ type JournalApi = {
   createTemplate: (input: TemplateInput) => Template;
   updateTemplate: (id: string, input: Partial<TemplateInput>) => void;
   deleteTemplate: (id: string) => void;
+  /** Pins a new quote at `at` (canvas units), on top of the others. */
+  createQuote: (input: QuoteInput, at: { x: number; y: number }) => Quote;
+  updateQuote: (id: string, patch: QuotePatch) => void;
+  deleteQuote: (id: string) => void;
   updateProfile: (profile: Pick<Profile, "display_name" | "emoji">) => Promise<boolean>;
   /** Changes the paper or pen used for every thought. Works offline. */
   setWritingStyle: (patch: Partial<WritingStyle>) => void;
@@ -70,7 +79,7 @@ const noopSubscribe = () => () => {};
 const getLocalTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
 const byNewest = (a: Entry, b: Entry) => b.created_at.localeCompare(a.created_at);
-const byOldest = (a: Template, b: Template) => a.created_at.localeCompare(b.created_at);
+const byOldest = (a: { created_at: string }, b: { created_at: string }) => a.created_at.localeCompare(b.created_at);
 
 export function JournalProvider({
   user,
@@ -78,6 +87,7 @@ export function JournalProvider({
   initialCategories,
   initialEntries,
   initialTemplates,
+  initialQuotes,
   initialTimeZone,
   now,
   children,
@@ -88,6 +98,7 @@ export function JournalProvider({
   initialCategories: Category[];
   initialEntries: Entry[];
   initialTemplates: Template[];
+  initialQuotes: Quote[];
   initialTimeZone: string;
   children: ReactNode;
 }) {
@@ -96,6 +107,7 @@ export function JournalProvider({
   const [categories, setCategories] = useState(initialCategories);
   const [entries, setEntries] = useState(initialEntries);
   const [templates, setTemplates] = useState(initialTemplates);
+  const [quotes, setQuotes] = useState(initialQuotes);
   const [profile, setProfile] = useState(initialProfile);
   const timeZone = useSyncExternalStore(
     noopSubscribe,
@@ -121,14 +133,16 @@ export function JournalProvider({
         setCategories(snapshot.categories);
         setEntries(snapshot.entries);
         if (snapshot.templates) setTemplates(snapshot.templates);
+        if (snapshot.quotes) setQuotes(snapshot.quotes);
       } else if (outbox.length) {
         const local = applyOps(
-          { categories: initialCategories, entries: initialEntries, templates: initialTemplates },
+          { categories: initialCategories, entries: initialEntries, templates: initialTemplates, quotes: initialQuotes },
           outbox,
         );
         setCategories(local.categories);
         setEntries(local.entries.sort(byNewest));
         setTemplates(local.templates.sort(byOldest));
+        setQuotes(local.quotes.sort(byOldest));
       }
       // A paper or pen picked offline, still waiting to sync.
       const style = outbox.flatMap((op) => (op.table === "profiles" && op.kind === "update" ? [op.patch] : []));
@@ -139,17 +153,17 @@ export function JournalProvider({
     return () => {
       cancelled = true;
     };
-  }, [user.id, now, initialCategories, initialEntries, initialTemplates, sync]);
+  }, [user.id, now, initialCategories, initialEntries, initialTemplates, initialQuotes, sync]);
 
   // Keep a copy of the journal on this device so it can be read offline.
   useEffect(() => {
     if (!restored) return;
     const timer = setTimeout(
-      () => saveSnapshot({ userId: user.id, basedOn: basedOn.current, categories, entries, templates }),
+      () => saveSnapshot({ userId: user.id, basedOn: basedOn.current, categories, entries, templates, quotes }),
       400,
     );
     return () => clearTimeout(timer);
-  }, [restored, user.id, categories, entries, templates]);
+  }, [restored, user.id, categories, entries, templates, quotes]);
 
   // Dates render in the reader's timezone; remember it so the server can match next time.
   useEffect(() => {
@@ -426,6 +440,90 @@ export function JournalProvider({
     [templates, sync, fail, toast],
   );
 
+  const createQuote = useCallback<JournalApi["createQuote"]>(
+    (input, at) => {
+      const stamp = new Date().toISOString();
+      const quote: Quote = {
+        id: crypto.randomUUID(),
+        text: input.text.trim(),
+        author: input.author.trim(),
+        color: input.color,
+        x: Math.round(at.x),
+        y: Math.round(at.y),
+        z: Math.max(0, ...quotes.map((q) => q.z)) + 1,
+        created_at: stamp,
+        updated_at: stamp,
+      };
+      setQuotes((all) => [...all, quote]);
+      sync
+        .run({ table: "quotes", kind: "upsert", row: quote })
+        .then(({ error }) => {
+          if (!error) return;
+          setQuotes((all) => all.filter((q) => q.id !== quote.id));
+          fail("We couldn’t pin that quote. Please try again.", error);
+        });
+      return quote;
+    },
+    [quotes, sync, fail],
+  );
+
+  const updateQuote = useCallback<JournalApi["updateQuote"]>(
+    (id, input) => {
+      const previous = quotes.find((q) => q.id === id);
+      if (!previous) return;
+      const patch = {
+        ...input,
+        ...(input.text !== undefined && { text: input.text.trim() }),
+        ...(input.author !== undefined && { author: input.author.trim() }),
+        ...(input.x !== undefined && { x: Math.round(input.x) }),
+        ...(input.y !== undefined && { y: Math.round(input.y) }),
+      };
+      setQuotes((all) => all.map((q) => (q.id === id ? { ...q, ...patch, updated_at: new Date().toISOString() } : q)));
+      sync
+        .run({ table: "quotes", kind: "update", key: id, patch })
+        .then(({ error }) => {
+          if (!error) return;
+          // Put back only what this write changed, so a later move or edit survives.
+          const undo = Object.fromEntries(Object.keys(patch).map((key) => [key, previous[key as keyof QuotePatch]]));
+          setQuotes((all) => all.map((q) => (q.id === id ? { ...q, ...undo } : q)));
+          fail("We couldn’t save that change to your quote.", error);
+        });
+    },
+    [quotes, sync, fail],
+  );
+
+  const deleteQuote = useCallback<JournalApi["deleteQuote"]>(
+    (id) => {
+      const quote = quotes.find((q) => q.id === id);
+      if (!quote) return;
+      const restore = () => setQuotes((all) => [...all.filter((q) => q.id !== id), quote].sort(byOldest));
+      setQuotes((all) => all.filter((q) => q.id !== id));
+      sync
+        .run({ table: "quotes", kind: "delete", key: id })
+        .then(({ error }) => {
+          if (error) {
+            restore();
+            fail("We couldn’t take that quote down.", error);
+            return;
+          }
+          toast.show("Quote taken down.", {
+            label: "Undo",
+            onClick: () => {
+              restore();
+              sync
+                .run({ table: "quotes", kind: "upsert", row: quote })
+                .then(({ error: restoreError }) => {
+                  if (!restoreError) return;
+                  setQuotes((all) => all.filter((q) => q.id !== id));
+                  fail("We couldn’t put that quote back.", restoreError);
+                });
+            },
+          });
+        });
+    },
+    [quotes, sync, fail, toast],
+  );
+
   // Sent straight away rather than through the outbox: it's rare, and only matters online.
   const updateProfile = useCallback<JournalApi["updateProfile"]>(
     async (next) => {
@@ -466,6 +564,7 @@ export function JournalProvider({
       categories: orderedCategories,
       entries,
       templates,
+      quotes,
       categoryById,
       countByCategory,
       unsortedCount,
@@ -480,6 +579,9 @@ export function JournalProvider({
       createTemplate,
       updateTemplate,
       deleteTemplate,
+      createQuote,
+      updateQuote,
+      deleteQuote,
       updateProfile,
       setWritingStyle,
     }),
@@ -492,6 +594,7 @@ export function JournalProvider({
       orderedCategories,
       entries,
       templates,
+      quotes,
       categoryById,
       countByCategory,
       unsortedCount,
@@ -506,6 +609,9 @@ export function JournalProvider({
       createTemplate,
       updateTemplate,
       deleteTemplate,
+      createQuote,
+      updateQuote,
+      deleteQuote,
       updateProfile,
       setWritingStyle,
     ],

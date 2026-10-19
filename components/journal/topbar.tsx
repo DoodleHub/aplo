@@ -54,6 +54,7 @@ function useCrumb(): Array<{ label: string; href?: string }> {
 
   if (pathname === "/favorites") return [{ label: "Favorites" }];
   if (pathname === "/discover") return [{ label: "Discover" }];
+  if (pathname === "/quotes") return [{ label: "Quotes" }];
   if (pathname === "/new") return [{ label: "New entry" }];
   if (pathname === UNSORTED.href) return [{ label: UNSORTED.name }];
   if (pathname.startsWith("/c/")) {
