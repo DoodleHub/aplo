@@ -7,6 +7,7 @@ type CategoryRow = {
   name: string;
   emoji: string;
   color: CategoryColor;
+  description: string;
   is_public: boolean;
   position: number;
   created_at: string;

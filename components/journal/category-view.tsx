@@ -130,7 +130,7 @@ function CornerHeader({
   badge,
   actions,
 }: {
-  corner: Pick<Category, "name" | "emoji" | "color">;
+  corner: Pick<Category, "name" | "emoji" | "color"> & { description?: string };
   count: number;
   countLabel?: string;
   badge?: ReactNode;
@@ -154,6 +154,9 @@ function CornerHeader({
         <h1 className="mt-4 font-display text-[2.1rem] leading-[1.1] font-semibold tracking-display text-ink sm:text-[2.5rem]">
           {corner.name}
         </h1>
+        {corner.description && (
+          <p className="mt-2 max-w-prose text-[1.05rem] wrap-break-word text-ink-soft">{corner.description}</p>
+        )}
         <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-[1.05rem] text-muted">
           {count} {count === 1 ? "thought" : "thoughts"} {countLabel}
           {badge}

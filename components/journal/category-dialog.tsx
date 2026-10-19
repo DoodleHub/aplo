@@ -55,6 +55,7 @@ function CategoryForm({
   const [color, setColor] = useState<CategoryColor>(
     category?.color ?? CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length],
   );
+  const [description, setDescription] = useState(category?.description ?? "");
   const [isPublic, setIsPublic] = useState(category?.is_public ?? false);
   const [error, setError] = useState<string>();
 
@@ -68,10 +69,10 @@ function CategoryForm({
     if (taken) return setError("You already have a corner with that name.");
 
     if (category) {
-      updateCategory(category.id, { name: trimmed, emoji, color, is_public: isPublic });
+      updateCategory(category.id, { name: trimmed, emoji, color, description, is_public: isPublic });
       if (isPublic !== category.is_public) announceSharing(category.id, trimmed);
     } else {
-      const created = createCategory({ name: trimmed, emoji, color, is_public: isPublic });
+      const created = createCategory({ name: trimmed, emoji, color, description, is_public: isPublic });
       onCreated?.(created);
     }
     onDone();
@@ -116,6 +117,22 @@ function CategoryForm({
           }}
         />
         {error && <p className="animate-fade-in text-sm text-danger">{error}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor="category-description" className="text-sm font-semibold text-ink">
+            What it’s for
+          </label>
+          <span className="text-xs text-subtle">Optional</span>
+        </div>
+        <Input
+          id="category-description"
+          maxLength={120}
+          placeholder="e.g. Pages I write before the day gets loud"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
       </div>
 
       <fieldset className="space-y-2">

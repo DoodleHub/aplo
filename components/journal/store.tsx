@@ -189,6 +189,7 @@ export function JournalProvider({
         name: input.name.trim(),
         emoji: input.emoji,
         color: input.color,
+        description: input.description.trim(),
         is_public: input.is_public,
         position: Math.max(-1, ...categories.map((c) => c.position)) + 1,
         created_at: new Date().toISOString(),
@@ -210,7 +211,11 @@ export function JournalProvider({
     (id, input) => {
       const previous = categories.find((c) => c.id === id);
       if (!previous) return;
-      const patch = input.name ? { ...input, name: input.name.trim() } : input;
+      const patch = {
+        ...input,
+        ...(input.name !== undefined && { name: input.name.trim() }),
+        ...(input.description !== undefined && { description: input.description.trim() }),
+      };
       setCategories((all) => all.map((c) => (c.id === id ? { ...c, ...patch } : c)));
       sync
         .run({ table: "categories", kind: "update", key: id, patch })

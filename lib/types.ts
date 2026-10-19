@@ -10,6 +10,8 @@ export type Category = {
   name: string;
   emoji: string;
   color: CategoryColor;
+  /** What the corner is for; "" when unset. Missing in snapshots saved before it existed. */
+  description: string;
   /** Thoughts here appear in Discover, unless an entry says otherwise. */
   is_public: boolean;
   position: number;
@@ -28,7 +30,7 @@ export type Entry = {
   updated_at: string;
 };
 
-export type CategoryInput = Pick<Category, "name" | "emoji" | "color" | "is_public">;
+export type CategoryInput = Pick<Category, "name" | "emoji" | "color" | "description" | "is_public">;
 export type EntryPatch = Partial<
   Pick<Entry, "category_id" | "title" | "content" | "mood" | "is_favorite" | "visibility">
 >;

@@ -17,7 +17,7 @@ export async function getJournal() {
   const [categories, entries, templates, profile, cookieStore] = await Promise.all([
     supabase
       .from("categories")
-      .select("id, name, emoji, color, is_public, position, created_at")
+      .select("id, name, emoji, color, description, is_public, position, created_at")
       .order("position")
       .order("created_at"),
     supabase
