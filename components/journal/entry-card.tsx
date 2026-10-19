@@ -33,7 +33,7 @@ export function EntryCard({
   return (
     <article
       style={style}
-      className="group relative flex min-h-[13.5rem] animate-fade-up flex-col rounded-2xl border border-line bg-surface p-6 shadow-soft transition-[transform,box-shadow,border-color] duration-300 ease-soft hover:-translate-y-1 hover:border-line-strong hover:shadow-lift"
+      className="group relative flex min-h-[13.5rem] animate-fade-up flex-col rounded-2xl border border-line bg-surface p-6 shadow-soft transition-[transform,box-shadow,border-color] duration-300 ease-soft hover:-translate-y-1 hover:border-line-strong hover:shadow-lift has-[[aria-expanded=true]]:-translate-y-1 has-[[aria-expanded=true]]:border-line-strong has-[[aria-expanded=true]]:shadow-lift"
     >
       <Link
         href={`/entry/${entry.id}`}
@@ -96,7 +96,7 @@ export function EntryCard({
           )}
         </span>
         {entry.mood && (
-          <span className="text-lg leading-none transition-transform duration-300 ease-spring group-hover:scale-125 group-hover:-rotate-6">
+          <span className="text-lg leading-none transition-transform duration-300 ease-spring group-hover:scale-125 group-hover:-rotate-6 group-has-[[aria-expanded=true]]:scale-125 group-has-[[aria-expanded=true]]:-rotate-6">
             {entry.mood}
           </span>
         )}
