@@ -107,7 +107,9 @@ export function Editor({
         return;
       }
       setExists(true);
-      window.history.replaceState(null, "", `/entry/${id}`);
+      // A save on the way out (e.g. tapping back mid-sentence) lands after the URL has
+      // already moved on; don't rewrite the page someone is now on.
+      if (window.location.pathname === "/new") window.history.replaceState(null, "", `/entry/${id}`);
     } else {
       dirty.current = false;
       setStatus("saving");

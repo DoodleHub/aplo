@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, usePathname, useSearchParams } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
 import { papers } from "@/lib/page-style";
 import { ButtonLink } from "@/components/ui/button";
@@ -42,13 +42,26 @@ export function NewEntry() {
   const searchParams = useSearchParams();
   const { entries, categoryById } = useJournal();
   // Ids are minted on the client only; the server renders the skeleton.
-  const [freshId] = useState(() => (typeof window === "undefined" ? "" : crypto.randomUUID()));
+  const [freshId, setFreshId] = useState(() => (typeof window === "undefined" ? "" : crypto.randomUUID()));
+  // Once saved, the editor moves the URL to /entry/<id>; coming back to it (e.g. with the
+  // back button) should reopen that entry, not start another.
+  const savedId = pathname.match(/^\/entry\/([^/]+)$/)?.[1];
+  // Next keeps this route's state between visits (cacheComponents preserves it with
+  // <Activity>), so `freshId` outlives the thought it became. Mint another when the URL
+  // comes back to /new after a save — e.g. tapping New right after writing one…
+  const [moved, setMoved] = useState(false);
+  if (savedId === freshId && !moved) setMoved(true);
+  if (!savedId && moved) {
+    setMoved(false);
+    setFreshId(crypto.randomUUID());
+  }
+  // …and whenever the page is hidden, since its editor may save on the way out.
+  useLayoutEffect(() => () => setFreshId(crypto.randomUUID()), []);
+
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   if (!mounted) return <EditorSkeleton />;
 
-  // Once saved, the editor moves the URL to /entry/<id>; coming back to it (e.g. with the
-  // back button) should reopen that entry, not start another.
-  const id = pathname.match(/^\/entry\/([^/]+)$/)?.[1] ?? freshId;
+  const id = savedId ?? freshId;
   const requested = searchParams.get("category");
   const defaultCategoryId = requested && categoryById.has(requested) ? requested : null;
 
