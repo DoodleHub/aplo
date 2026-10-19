@@ -63,6 +63,7 @@ export const MOODS = [
   { emoji: "🤩", label: "Excited" },
   { emoji: "🤔", label: "Thoughtful" },
   { emoji: "😴", label: "Tired" },
+  { emoji: "🤒", label: "Sick" },
   { emoji: "😔", label: "Low" },
   { emoji: "😢", label: "Sad" },
   { emoji: "😤", label: "Frustrated" },
