@@ -9,7 +9,7 @@ import { useJournal } from "./store";
 const PAGE_SIZE = 9;
 
 export function EntryGrid({ entries, empty }: { entries: Entry[]; empty: ReactNode }) {
-  const { categoryById, timeZone, toggleFavorite } = useJournal();
+  const { categoryById, timeZone, toggleFavorite, deleteEntry } = useJournal();
   const [limit, setLimit] = useState(PAGE_SIZE);
 
   if (entries.length === 0) return <>{empty}</>;
@@ -24,6 +24,7 @@ export function EntryGrid({ entries, empty }: { entries: Entry[]; empty: ReactNo
             category={entry.category_id ? categoryById.get(entry.category_id) : undefined}
             timeZone={timeZone}
             onToggleFavorite={() => toggleFavorite(entry.id)}
+            onDelete={() => deleteEntry(entry.id)}
             style={{ animationDelay: `${Math.min(i % PAGE_SIZE, 8) * 40}ms` }}
           />
         ))}

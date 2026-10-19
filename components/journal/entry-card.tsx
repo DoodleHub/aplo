@@ -5,8 +5,10 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/cn";
 import { shortDate, wordCount } from "@/lib/format";
 import { isShared, type Category, type Entry } from "@/lib/types";
+import { IconButton } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { GlobeIcon, HeartIcon } from "@/components/icons";
+import { Menu } from "@/components/ui/menu";
+import { GlobeIcon, HeartIcon, MoreIcon, TrashIcon } from "@/components/icons";
 import { FormattedText } from "./formatted-text";
 
 export function EntryCard({
@@ -14,12 +16,14 @@ export function EntryCard({
   category,
   timeZone,
   onToggleFavorite,
+  onDelete,
   style,
 }: {
   entry: Entry;
   category?: Category;
   timeZone: string;
   onToggleFavorite?: () => void;
+  onDelete?: () => void;
   style?: CSSProperties;
 }) {
   const [burst, setBurst] = useState(0);
@@ -38,29 +42,41 @@ export function EntryCard({
       />
       <div className="flex items-start justify-between gap-3">
         {category ? (
-          <Chip color={category.color} emoji={category.emoji}>
+          <Chip color={category.color} emoji={category.emoji} className="min-w-0">
             {category.name}
           </Chip>
         ) : (
           <Chip color="stone">Unsorted</Chip>
         )}
-        {onToggleFavorite && (
-          <button
-            type="button"
-            onClick={() => {
-              if (!entry.is_favorite) setBurst((b) => b + 1);
-              onToggleFavorite();
-            }}
-            aria-pressed={entry.is_favorite}
-            aria-label={entry.is_favorite ? "Remove from favorites" : "Add to favorites"}
-            className={cn(
-              "relative z-10 -mt-1 -mr-1.5 flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 hover:bg-sage-50",
-              entry.is_favorite ? "text-heart" : "text-faint hover:text-heart",
-            )}
-          >
-            <HeartIcon key={burst} size={22} filled={entry.is_favorite} className={burst ? "animate-heart" : ""} />
-          </button>
-        )}
+        <div className="relative z-10 -mt-1 -mr-1.5 flex shrink-0 items-center">
+          {onToggleFavorite && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!entry.is_favorite) setBurst((b) => b + 1);
+                onToggleFavorite();
+              }}
+              aria-pressed={entry.is_favorite}
+              aria-label={entry.is_favorite ? "Remove from favorites" : "Add to favorites"}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 hover:bg-sage-50",
+                entry.is_favorite ? "text-heart" : "text-faint hover:text-heart",
+              )}
+            >
+              <HeartIcon key={burst} size={22} filled={entry.is_favorite} className={burst ? "animate-heart" : ""} />
+            </button>
+          )}
+          {onDelete && (
+            <Menu
+              items={[{ label: "Delete thought", icon: <TrashIcon size={17} />, tone: "danger", onSelect: onDelete }]}
+              trigger={(props) => (
+                <IconButton label={`Options for “${title}”`} {...props}>
+                  <MoreIcon size={20} />
+                </IconButton>
+              )}
+            />
+          )}
+        </div>
       </div>
 
       <h3 className="mt-4 line-clamp-1 font-display text-[1.15rem] font-semibold tracking-[-0.02em] text-ink">
