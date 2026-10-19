@@ -30,6 +30,8 @@ export function CornerPicker({
       label="Corners"
       align="start"
       room={380}
+      // Hug the pill: a full-width anchor would count clicks beside it as "inside" and keep the list open.
+      className="w-fit max-w-full"
       panelClassName="w-68 max-w-[calc(100vw-2rem)]"
       trigger={(props) => (
         <button
