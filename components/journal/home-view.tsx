@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { cn } from "@/lib/cn";
 import { longDate } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
@@ -11,11 +12,24 @@ import { EmptyState, EntryGrid } from "./entry-grid";
 import { HeroPrompt } from "./hero-prompt";
 import { SectionHeader } from "./section-header";
 import { useJournal } from "./store";
+import { useReorder } from "./use-reorder";
 
 export function HomeView() {
-  const { entries, categories, countByCategory, unsortedCount, timeZone, now } = useJournal();
+  const { entries, categories, categoryById, countByCategory, unsortedCount, timeZone, now, reorderCategories } =
+    useJournal();
   const { openCategoryDialog } = useShell();
   const [filter, setFilter] = useState<"all" | "favorites">("all");
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [moveStatus, setMoveStatus] = useState("");
+  const { draggingId, itemProps } = useReorder({
+    ids: categories.map((c) => c.id),
+    scrollRef: rowRef,
+    orientation: "horizontal",
+    onReorder: (ids, moved) => {
+      reorderCategories(ids);
+      setMoveStatus(`${categoryById.get(moved.id)?.name} moved to ${moved.to + 1} of ${ids.length}.`);
+    },
+  });
   const visible = filter === "favorites" ? entries.filter((e) => e.is_favorite) : entries;
 
   return (
@@ -50,15 +64,30 @@ export function HomeView() {
             </button>
           }
         />
+        <p className="sr-only" aria-live="polite">
+          {moveStatus}
+        </p>
         {categories.length > 0 || unsortedCount > 0 ? (
-          <CategoryRow>
+          <CategoryRow ref={rowRef} dragging={Boolean(draggingId)}>
             {categories.map((category, i) => (
-              <CategoryCard
+              <div
                 key={category.id}
-                category={category}
-                count={countByCategory.get(category.id) ?? 0}
-                style={{ animationDelay: `${80 + i * 35}ms` }}
-              />
+                {...itemProps(category.id, i)}
+                className={cn(
+                  "shrink-0 select-none",
+                  draggingId === category.id
+                    ? "relative z-10 cursor-grabbing"
+                    : draggingId && "transition-transform duration-300 ease-soft",
+                )}
+              >
+                <CategoryCard
+                  category={category}
+                  count={countByCategory.get(category.id) ?? 0}
+                  dragging={draggingId === category.id}
+                  aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+                  style={{ animationDelay: `${80 + i * 35}ms` }}
+                />
+              </div>
             ))}
             {unsortedCount > 0 && (
               <CategoryCard

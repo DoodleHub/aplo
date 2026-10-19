@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { signOut } from "@/app/(auth)/actions";
 import { clearDeviceCopy } from "@/lib/local-db";
@@ -26,6 +26,7 @@ import { CategoryMenu } from "./category-actions";
 import { UNSORTED } from "./category-card";
 import { Avatar } from "./profile-dialog";
 import { useJournal } from "./store";
+import { useReorder } from "./use-reorder";
 
 export function Sidebar({
   onNavigate,
@@ -35,9 +36,30 @@ export function Sidebar({
   onCreateCategory: () => void;
 }) {
   const pathname = usePathname();
-  const { categories, countByCategory, unsortedCount, entries, user, profile, pendingWrites, timeZone } = useJournal();
+  const {
+    categories,
+    categoryById,
+    countByCategory,
+    unsortedCount,
+    entries,
+    user,
+    profile,
+    pendingWrites,
+    timeZone,
+    reorderCategories,
+  } = useJournal();
   const { openProfileDialog } = useShell();
   const favorites = entries.filter((e) => e.is_favorite).length;
+  const listRef = useRef<HTMLDivElement>(null);
+  const [moveStatus, setMoveStatus] = useState("");
+  const { draggingId, itemProps } = useReorder({
+    ids: categories.map((c) => c.id),
+    scrollRef: listRef,
+    onReorder: (ids, moved) => {
+      reorderCategories(ids);
+      setMoveStatus(`${categoryById.get(moved.id)?.name} moved to ${moved.to + 1} of ${ids.length}.`);
+    },
+  });
 
   return (
     <div className="flex h-full flex-col px-5 pt-8 pb-5">
@@ -78,20 +100,37 @@ export function Sidebar({
         </button>
       </div>
 
-      <div className="-mx-1 mt-2 min-h-0 flex-1 overflow-y-auto px-1 scrollbar-none">
+      <div ref={listRef} className="-mx-1 mt-2 min-h-0 flex-1 overflow-y-auto px-1 scrollbar-none">
+        <p className="sr-only" aria-live="polite">
+          {moveStatus}
+        </p>
         <ul className="space-y-0.5">
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const href = `/c/${category.id}`;
             const active = pathname === href;
+            const dragging = draggingId === category.id;
             return (
-              <li key={category.id} className="group/row relative animate-fade-in">
+              <li
+                key={category.id}
+                {...itemProps(category.id, index)}
+                className={cn(
+                  "group/row relative animate-fade-in select-none",
+                  dragging ? "z-10 cursor-grabbing" : draggingId && "transition-transform duration-200 ease-soft",
+                )}
+              >
                 <Link
                   href={href}
                   onClick={onNavigate}
+                  draggable={false}
                   aria-current={active ? "page" : undefined}
+                  aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
                   className={cn(
-                    "group flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-colors duration-200 pointer-coarse:pr-11",
-                    active ? "bg-sage-100 text-ink" : "text-ink hover:bg-sage-100/70 group-has-[[aria-expanded=true]]/row:bg-sage-100/70",
+                    "group flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] transition-[background-color,box-shadow] duration-200 [-webkit-touch-callout:none] pointer-coarse:pr-11",
+                    dragging
+                      ? "bg-surface text-ink shadow-lift"
+                      : active
+                        ? "bg-sage-100 text-ink"
+                        : "text-ink hover:bg-sage-100/70 group-has-[[aria-expanded=true]]/row:bg-sage-100/70",
                   )}
                 >
                   <Dot

@@ -48,6 +48,8 @@ type JournalApi = {
   createCategory: (input: CategoryInput) => Category;
   updateCategory: (id: string, input: Partial<CategoryInput>) => void;
   deleteCategory: (id: string) => void;
+  /** Saves a new order for the corners, given every corner's id from first to last. */
+  reorderCategories: (ids: string[]) => void;
   createEntry: (entry: Entry) => Promise<boolean>;
   updateEntry: (id: string, patch: EntryPatch) => Promise<boolean>;
   toggleFavorite: (id: string) => void;
@@ -156,6 +158,11 @@ export function JournalProvider({
     }
   }, [timeZone, initialTimeZone]);
 
+  // Kept in position order wherever state came from (server, snapshot, replayed outbox).
+  const orderedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at)),
+    [categories],
+  );
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   const [countByCategory, unsortedCount] = useMemo(() => {
@@ -224,6 +231,27 @@ export function JournalProvider({
           setCategories((all) => all.map((c) => (c.id === id ? previous : c)));
           fail("We couldn’t update that corner.", error);
         });
+    },
+    [categories, sync, fail],
+  );
+
+  const reorderCategories = useCallback<JournalApi["reorderCategories"]>(
+    (ids) => {
+      const before = new Map(categories.map((c) => [c.id, c.position]));
+      const moved = new Map(
+        ids.flatMap((id, position) => (before.has(id) && before.get(id) !== position ? [[id, position] as const] : [])),
+      );
+      if (moved.size === 0) return;
+      setCategories((all) => all.map((c) => (moved.has(c.id) ? { ...c, position: moved.get(c.id)! } : c)));
+      Promise.all(
+        [...moved].map(([id, position]) => sync.run({ table: "categories", kind: "update", key: id, patch: { position } })),
+      ).then((results) => {
+        const failed = results.find((r) => r.error);
+        if (!failed) return;
+        // Put back only the positions, so other edits made meanwhile survive.
+        setCategories((all) => all.map((c) => (moved.has(c.id) ? { ...c, position: before.get(c.id)! } : c)));
+        fail("We couldn’t save the new order of your corners.", failed.error);
+      });
     },
     [categories, sync, fail],
   );
@@ -435,7 +463,7 @@ export function JournalProvider({
       timeZone,
       now,
       pendingWrites,
-      categories,
+      categories: orderedCategories,
       entries,
       templates,
       categoryById,
@@ -444,6 +472,7 @@ export function JournalProvider({
       createCategory,
       updateCategory,
       deleteCategory,
+      reorderCategories,
       createEntry,
       updateEntry,
       toggleFavorite,
@@ -460,7 +489,7 @@ export function JournalProvider({
       timeZone,
       now,
       pendingWrites,
-      categories,
+      orderedCategories,
       entries,
       templates,
       categoryById,
@@ -469,6 +498,7 @@ export function JournalProvider({
       createCategory,
       updateCategory,
       deleteCategory,
+      reorderCategories,
       createEntry,
       updateEntry,
       toggleFavorite,

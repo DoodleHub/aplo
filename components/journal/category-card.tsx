@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, Ref } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { palette } from "@/lib/palette";
@@ -18,18 +18,26 @@ export function CategoryCard({
   count,
   style,
   className,
+  dragging = false,
+  "aria-keyshortcuts": keyShortcuts,
 }: {
   category: Pick<Category, "id" | "name" | "emoji" | "color"> | typeof UNSORTED;
   count: number;
   style?: CSSProperties;
   className?: string;
+  /** Lifted while being dragged to a new place. */
+  dragging?: boolean;
+  "aria-keyshortcuts"?: string;
 }) {
   return (
     <Link
       href={"href" in category ? category.href : `/c/${category.id}`}
       style={style}
+      draggable={false}
+      aria-keyshortcuts={keyShortcuts}
       className={cn(
-        "group flex h-14 max-w-60 shrink-0 animate-fade-up snap-start items-center gap-3 rounded-2xl border py-2 pr-4 pl-2 transition-[transform,box-shadow] duration-300 ease-soft hover:-translate-y-0.5 hover:shadow-lift active:scale-[0.98]",
+        "group flex h-14 max-w-60 shrink-0 animate-fade-up snap-start items-center gap-3 rounded-2xl border py-2 pr-4 pl-2 transition-[transform,box-shadow] duration-300 ease-soft [-webkit-touch-callout:none]",
+        dragging ? "shadow-pop" : "hover:-translate-y-0.5 hover:shadow-lift active:scale-[0.98]",
         palette[category.color].card,
         className,
       )}
@@ -48,9 +56,24 @@ export function CategoryCard({
 }
 
 /** Row of category tiles: swipeable on small screens, wrapping on larger ones. */
-export function CategoryRow({ children }: { children: ReactNode }) {
+export function CategoryRow({
+  children,
+  ref,
+  dragging = false,
+}: {
+  children: ReactNode;
+  ref?: Ref<HTMLDivElement>;
+  /** Turns off snapping, which would fight a tile being dragged along the row. */
+  dragging?: boolean;
+}) {
   return (
-    <div className="-mx-4 -my-1 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 py-1 scrollbar-none mask-[linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:mask-none">
+    <div
+      ref={ref}
+      className={cn(
+        "-mx-4 -my-1 flex snap-x scroll-px-4 gap-2.5 overflow-x-auto px-4 py-1 scrollbar-none mask-[linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:mask-none",
+        !dragging && "snap-mandatory",
+      )}
+    >
       {children}
     </div>
   );
