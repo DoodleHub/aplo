@@ -100,7 +100,6 @@ export function QuotesView() {
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<Gesture | null>(null);
   const lastTap = useRef<{ time: number; at: Point; id: string | null } | null>(null);
-  const initialized = useRef(false);
   const smoothTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const apply = useCallback((next: View, glide = false) => {
@@ -139,13 +138,20 @@ export function QuotesView() {
     return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
   }, []);
 
-  // Always open with every quote in view. A ref callback runs once the cards are in the DOM
-  // to be measured, and before the first paint.
+  // Always open with every quote in view: on first visit, and on coming back, since Next keeps
+  // visited pages alive in a hidden <Activity> instead of unmounting them. React detaches refs
+  // when a page hides and re-attaches them when it shows again, after the DOM is visible and
+  // before paint, so the cards can be measured here every time.
   const attachViewport = useCallback(
     (viewport: HTMLDivElement | null) => {
       viewportRef.current = viewport;
-      if (!viewport || initialized.current) return;
-      initialized.current = true;
+      if (!viewport) {
+        // Drop any gesture cut short by leaving the page.
+        pointers.current.clear();
+        gesture.current = null;
+        setLive(undefined);
+        return;
+      }
       apply(fitView());
       setReady(true);
     },
